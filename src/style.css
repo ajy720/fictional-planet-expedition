@@ -103,7 +103,7 @@ main :is(button, a) { pointer-events: auto; }
 .telemetry { position: absolute; top: clamp(101px, 15vh, 144px); left: var(--edge); max-width: min(345px, 29vw); padding: 14px 17px 14px 0; background: radial-gradient(ellipse at 0 55%, #05080ef4, #05080e8c 60%, transparent 78%); }
 .telemetry h2 { margin: 6px 0 2px; font-size: clamp(28px, 3.25vw, 49px); line-height: 1.18; letter-spacing: -.075em; text-wrap: balance; }
 .telemetry p:last-child { color: #c9d7e5; margin: 7px 0 0; font-size: 14px; }
-.scene-labels { position: absolute; inset: 0; z-index: 2; }
+.scene-labels { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 body[data-looking] .telemetry, body[data-looking] .console, body[data-looking] .log-screen,
 body[data-looking] .topbar { visibility: hidden; }
 .scene-labels span { position: absolute; display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 650; color: var(--ink); text-shadow: 0 1px 5px #000; white-space: nowrap; transform: translate(5px, 5px); }
@@ -144,7 +144,7 @@ dialog::backdrop { background: #03060bbd; }
 }
 .earth-point-label { position: absolute; top: calc(50% + 6px); left: calc(50% + 20px); color: var(--accent); font-size: 12px; }
 .earth-dialog[data-view="voyager"] .earth-point-label { left: calc(50% + 47px); }
-.earth-dialog[data-view="moon"] .earth-point-label { display: none; }
+.earth-dialog:is([data-view="moon"], [data-view="stellar"]) .earth-point-label { display: none; }
 .earth-caption { position: absolute; left: var(--edge); bottom: clamp(31px, 7vh, 68px); max-width: 430px; padding: 19px; border: 1px solid var(--line); background: #101722f2; border-radius: 6px; }
 .earth-caption h2 { margin: 5px 0 7px; font-size: 26px; letter-spacing: -.04em; }
 .earth-caption p:not(.eyebrow) { margin: 0 0 14px; color: var(--muted); }

@@ -1,6 +1,7 @@
 import './style.css';
 import { adjustOrbit, createScene, initialOrbit } from './scene.js';
 import { createAudio } from './audio.js';
+import { introSections, introSectionAt, lastIntroSection } from './intro.js';
 
 const $ = id => document.getElementById(id);
 const show = (id, on) => { $(id).hidden = !on; };
@@ -9,12 +10,6 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const audio = createAudio();
 const key = 'fictional-planet-expedition:v1';
 const first = { screen: 'intro', progress: 0, elapsed: 0, paused: false, covered: false, look: null };
-const intro = [
-  { title: '지구 궤도', subtitle: '지구를 떠나기 전, 거리의 기준을 맞춥니다.', label: '비교 축척', value: '지구–태양 = 1cm', note: '지구–태양 평균 거리 약 1억 4,960만 km' },
-  { title: '달 접근', subtitle: '창을 채웠던 지구가 달 옆의 작은 원반으로 보입니다.', label: '지구–달 평균 거리', value: '384,400 km', note: '빛으로 약 1.3초' },
-  { title: '태양계', subtitle: '태양과 행성 궤도를 한 시야에서 봅니다.', label: '태양계 거리 단위', value: '1 AU', note: '약 1억 4,960만 km · 크기 강조' },
-  { title: '가까운 항성계', subtitle: '지구–태양을 1cm로 줄인 같은 축척으로 비교합니다.', label: '알파 센타우리 A', value: '약 2.8km', note: '지구 기준 4.37광년 · 크기 강조' }
-];
 
 let saved;
 let corrupt = false;
@@ -44,7 +39,8 @@ function readSaved() {
       || !Number.isFinite(data.elapsed) || data.elapsed < 0 || data.elapsed > 8000
       || !orbit || ![orbit.theta, orbit.phi, orbit.radius].every(Number.isFinite)
       || typeof data.sound !== 'boolean' || typeof data.paused !== 'boolean' || typeof data.covered !== 'boolean'
-      || ![null, 'moon', 'solar', 'voyager', 'nav'].includes(data.look)
+      || ![null, 'moon', 'solar', 'voyager', 'nav', 'stellar'].includes(data.look)
+      || (data.look === 'stellar' && data.screen !== 'log')
       || (data.screen === 'log' && !data.covered)) {
       corrupt = true;
       return;
@@ -76,7 +72,7 @@ function setScroll(progress) {
 }
 
 function stageIndex() {
-  return Math.min(3, Math.floor((state.progress + .000001) * 4));
+  return introSectionAt(state.progress);
 }
 
 function renderNodes(names, current) {
@@ -143,8 +139,8 @@ function renderScreen() {
 
   show('intro-actions', scaling);
   show('prev-section', scaling && phase > 0);
-  show('next-section', scaling && phase < 3);
-  show('launch', scaling && phase === 3);
+  show('next-section', scaling && phase < lastIntroSection);
+  show('launch', scaling && phase === lastIntroSection);
   show('flight-actions', flying);
   show('step-flight', flying && reduced.matches);
   show('pause-flight', flying && !reduced.matches);
@@ -157,15 +153,15 @@ function renderScreen() {
   show('look-back', flying || (scaling && phase >= 1));
 
   if (scaling) {
-    const data = intro[phase];
-    renderNodes(intro.map(section => section.title), phase);
+    const data = introSections[phase];
+    renderNodes(introSections.map(section => section.title), phase);
     copy('stage-context', '첫 목적지 · B612');
     copy('stage-title', data.title);
     copy('stage-description', data.subtitle);
     copy('metric-label', data.label);
     copy('metric', data.value);
     copy('metric-note', data.note);
-    copy('instruction', phase === 3 ? '계속 스크롤하면 자동 비행이 시작됩니다.' : '스크롤하여 지구에서 멀어지세요.');
+    copy('instruction', phase === lastIntroSection ? '계속 스크롤하면 B612 자동 비행이 시작됩니다.' : '스크롤하여 지구에서 멀어지세요.');
   } else if (flying || orbiting || inspecting) {
     const approaching = state.elapsed >= 5000;
     renderNodes(['B612 순항', 'B612 접근', '근접 관측'], flying ? Number(approaching) : 2);
@@ -231,16 +227,18 @@ function launch() {
   announce('B612 자동 비행을 시작합니다.');
 }
 
-function goToSection(index) {
-  const steps = [0, .25, .5, .75];
-  if (state.screen !== 'intro' || index < 0 || index > 3) return;
-  const destination = Math.ceil(steps[index] * scrollHeight);
-  window.scrollTo(0, destination);
-  state.progress = destination / scrollHeight;
-  renderScreen();
-  save();
+function scrollToProgress(progress) {
+  window.scrollTo({
+    top: Math.ceil(progress * scrollHeight),
+    behavior: reduced.matches ? 'instant' : 'smooth'
+  });
   focusScreen();
-  announce(intro[index].title);
+}
+
+function goToSection(index) {
+  const section = introSections[index];
+  if (state.screen !== 'intro' || !section || activeDialog || failure) return;
+  scrollToProgress(section.at);
 }
 
 function observe() {
@@ -331,10 +329,14 @@ function restoreDialog() {
       voyager: '보이저 1호 사진을 참고한 연출.',
       nav: '지구 방향 · 항법 연출'
     };
+    const stellar = state.look === 'stellar';
     $('earth-dialog').dataset.view = state.look;
-    copy('earth-note', notes[state.look]);
+    copy('earth-context', stellar ? 'B612 탐사 이후' : '지구 돌아보기');
+    copy('earth-title', stellar ? '가까운 항성계' : '우리가 떠나온 곳');
+    copy('earth-note', stellar ? '지구–태양 사이를 1cm로 줄이면, 알파 센타우리 A까지는 약 2.8km입니다.' : notes[state.look]);
+    show('stellar-distance', stellar);
     copy('earth-return', state.screen === 'log' ? '기록으로 돌아가기' : '항로로 돌아가기');
-    openDialog('earth-dialog', $(state.screen === 'log' ? 'log-earth' : 'look-back'));
+    openDialog('earth-dialog', $(stellar ? 'log-stellar' : state.screen === 'log' ? 'log-earth' : 'look-back'));
     renderScreen();
     sound();
     save();
@@ -345,7 +347,7 @@ function lookBack() {
   if (activeDialog) return;
   const phase = stageIndex();
   if (state.screen === 'intro' && phase === 0) return;
-  state.look = state.screen === 'log' ? 'nav' : state.screen === 'flight' || phase === 3 ? 'voyager' : phase === 1 ? 'moon' : 'solar';
+  state.look = state.screen === 'log' ? 'nav' : state.screen === 'flight' ? 'voyager' : phase === 1 ? 'moon' : 'solar';
   restoreDialog();
 }
 
@@ -405,7 +407,7 @@ async function restoreScene() {
   renderScreen();
   try {
     if (!scene) {
-      scene = await createScene($('scene'), $('scene-labels'));
+      scene = await createScene($('scene'), $('scene-labels'), $('look-labels'));
       bindCanvas(scene.canvas);
     }
     scene.resize();
@@ -446,7 +448,7 @@ $('sound').addEventListener('click', () => {
 $('sources').addEventListener('click', event => openDialog('source-dialog', event.currentTarget));
 $('prev-section').addEventListener('click', () => goToSection(stageIndex() - 1));
 $('next-section').addEventListener('click', () => goToSection(stageIndex() + 1));
-$('launch').addEventListener('click', launch);
+$('launch').addEventListener('click', () => scrollToProgress(1));
 $('pause-flight').addEventListener('click', () => {
   state.paused = !state.paused;
   lastTime = 0;
@@ -479,15 +481,20 @@ $('record').addEventListener('click', () => {
 $('home').addEventListener('click', () => transition('start'));
 $('look-back').addEventListener('click', lookBack);
 $('log-earth').addEventListener('click', lookBack);
+$('log-stellar').addEventListener('click', () => {
+  if (state.screen !== 'log' || activeDialog) return;
+  state.look = 'stellar';
+  restoreDialog();
+});
 $('abort').addEventListener('click', event => {
   confirm('탐사를 중단할까요?', 'B612 출항 직전 위치로 돌아갑니다.', '탐사 중단', event.currentTarget, () => {
-    transition('intro', { ...first, progress: .75, orbit: initialOrbit() });
+    transition('intro', { ...first, progress: introSections[lastIntroSection].at, orbit: initialOrbit() });
   });
 });
 $('confirm-action').addEventListener('click', () => $('confirm-dialog').close('confirm'));
 $('retry').addEventListener('click', restoreScene);
 $('error-back').addEventListener('click', () => {
-  transition('intro', { ...first, progress: .75, orbit: initialOrbit() });
+  transition('intro', { ...first, progress: introSections[lastIntroSection].at, orbit: initialOrbit() });
   restoreScene();
 });
 for (const button of document.querySelectorAll('[data-orbit]')) {
@@ -498,12 +505,14 @@ for (const button of document.querySelectorAll('[data-orbit]')) {
 }
 window.addEventListener('scroll', () => {
   if (state.screen !== 'intro' || activeDialog || failure || !scrollHeight) return;
+  const previousSection = stageIndex();
   state.progress = Math.min(1, Math.max(0, window.scrollY / scrollHeight));
   if (state.progress >= 1 - .5 / scrollHeight) {
     launch();
     return;
   }
   renderScreen();
+  if (previousSection !== stageIndex()) announce(introSections[stageIndex()].title);
   throttledSave();
 }, { passive: true });
 window.addEventListener('resize', () => {
