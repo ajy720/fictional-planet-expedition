@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05080e">
+  <meta name="description" content="지구에서 어린 왕자의 소행성 B612까지 이어지는 3D 관측 여정">
+  <link rel="icon" href="data:,">
+  <title>상상 속 행성까지</title>
+</head>
+<body>
+  <div id="scene" class="scene"></div>
+  <div id="scroll-track" aria-hidden="true"></div>
+  <div class="cockpit" aria-hidden="true" hidden><i></i><i></i><i></i><i></i></div>
+  <header class="topbar">
+    <a class="wordmark" href="./" aria-label="상상 속 행성까지 시작 화면">
+      <span class="orbit-mark" aria-hidden="true"></span><span>상상 속 행성까지</span>
+    </a>
+    <ol id="route-nodes" class="route-nodes" aria-label="비행 단계" hidden></ol>
+    <div class="utilities">
+      <button type="button" id="sound" class="utility" hidden><span class="sound-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="sound-label"></span></button>
+      <button type="button" id="sources" class="utility">출처와 축척 <span aria-hidden="true">↗</span></button>
+    </div>
+  </header>
+  <main>
+    <section id="welcome" class="welcome" aria-labelledby="title">
+      <div class="welcome-content">
+        <h1 id="title" tabindex="-1">상상 속<br>행성까지</h1>
+        <p class="welcome-copy">지구를 떠나 어린 왕자의 소행성으로 향합니다.<br>멀어지는 지구를 바라보고 B612의 장미를 찾아보세요.</p>
+        <div id="start-actions" class="start-actions">
+          <button type="button" id="start-sound" class="button primary">소리와 함께 시작 <span aria-hidden="true">↗</span></button>
+          <button type="button" id="start-muted" class="button">조용히 시작 <span aria-hidden="true">↗</span></button>
+        </div>
+        <div id="resume-actions" class="start-actions" hidden>
+          <button type="button" id="resume" class="button primary">이어서 탐사 <span aria-hidden="true">↗</span></button>
+          <button type="button" id="new-journey" class="button">새 여정</button>
+        </div>
+        <p id="welcome-status" role="status" class="small" hidden></p>
+      </div>
+      <div class="hero-label" aria-hidden="true"><span></span><div><b>지구</b><small>EARTH</small></div></div>
+      <div class="welcome-footer">
+        <span>Network Media · Final Project</span>
+        <span>지구 궤도 <i></i> 소행성 B612</span>
+      </div>
+    </section>
+
+    <section id="journey" class="journey" aria-labelledby="stage-title" hidden>
+      <div id="scene-labels" class="scene-labels" aria-hidden="true"></div>
+      <div class="telemetry">
+        <p id="stage-context" class="eyebrow"></p>
+        <h2 id="stage-title" tabindex="-1"></h2>
+        <p id="stage-description"></p>
+      </div>
+      <div class="console">
+        <div class="readout">
+          <span id="metric-label" class="eyebrow"></span>
+          <strong id="metric"></strong>
+          <span id="metric-note" class="small"></span>
+        </div>
+        <div class="console-controls">
+          <p id="instruction" class="small"></p>
+          <div id="intro-actions" class="buttons" hidden>
+            <button type="button" id="prev-section" class="button">← 이전 구간</button>
+            <button type="button" id="next-section" class="button">다음 구간 →</button>
+            <button type="button" id="launch" class="button primary">B612로 출발 <span aria-hidden="true">↗</span></button>
+          </div>
+          <div id="flight-actions" class="buttons" hidden>
+            <button type="button" id="pause-flight" class="button">일시정지</button>
+            <button type="button" id="step-flight" class="button primary" hidden>다음 비행 단계 →</button>
+          </div>
+          <div id="orbit-actions" class="buttons" hidden>
+            <div class="orbit-controls" role="group" aria-label="관측 카메라">
+              <button type="button" class="button icon" data-orbit="left" aria-label="왼쪽으로 회전">←</button>
+              <button type="button" class="button icon" data-orbit="right" aria-label="오른쪽으로 회전">→</button>
+              <button type="button" class="button icon" data-orbit="up" aria-label="위로 회전">↑</button>
+              <button type="button" class="button icon" data-orbit="down" aria-label="아래로 회전">↓</button>
+              <button type="button" class="button icon" data-orbit="in" aria-label="확대">+</button>
+              <button type="button" class="button icon" data-orbit="out" aria-label="축소">−</button>
+            </div>
+            <button type="button" id="observe" class="button primary" hidden>장미 관찰 <span aria-hidden="true">↗</span></button>
+          </div>
+          <div id="rose-actions" class="buttons" hidden>
+            <button type="button" id="cover" class="button primary">유리 덮개 씌우기</button>
+            <button type="button" id="keep-looking" class="button">계속 둘러보기</button>
+            <button type="button" id="record" class="button primary" hidden>탐사 기록 보기 <span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+        <div class="console-secondary">
+          <button type="button" id="look-back" class="button" hidden>지구 돌아보기 <span aria-hidden="true">↶</span></button>
+          <button type="button" id="abort" class="utility" hidden>탐사 중단</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="log" class="log-screen" aria-labelledby="log-title" hidden>
+      <article class="log-panel">
+        <p class="eyebrow"><span></span> 탐사 기록 <strong>1 / 7</strong></p>
+        <h2 id="log-title" tabindex="-1">B612</h2>
+        <p class="log-work">《어린 왕자》</p>
+        <div class="log-entry"><span class="eyebrow">관찰 결과</span><p>장미를 찾고 유리 덮개를 씌웠다.</p></div>
+        <div class="log-entry"><span class="eyebrow">거리 기준</span><p>거리 미상 · 가상 항로</p></div>
+        <a class="source-link" href="https://www.lepetitprince.com/en/new-products-from-our-licensees/cutebee-unveils-two-book-nooks-inspired-by-the-little-prince/" target="_blank" rel="noopener noreferrer">B612, 장미, 유리 덮개 · 어린 왕자 공식 사이트 ↗</a>
+        <div class="buttons log-actions">
+          <button type="button" id="log-earth" class="button primary">지구 돌아보기 <span aria-hidden="true">↶</span></button>
+          <button type="button" id="home" class="button">시작 화면</button>
+        </div>
+      </article>
+      <div class="log-dot" aria-hidden="true"><i></i> 지구</div>
+    </section>
+
+    <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+    <p id="save-warning" class="save-warning" role="status" hidden>이 브라우저에 탐사를 저장할 수 없습니다.</p>
+    <section id="error" class="error-card" aria-labelledby="error-title" hidden>
+      <h2 id="error-title">3D 관측을 시작할 수 없습니다</h2>
+      <p id="error-copy"></p>
+      <button type="button" id="retry" class="button primary">다시 불러오기</button>
+      <button type="button" id="error-back" class="button" hidden>출항 준비로 돌아가기</button>
+    </section>
+  </main>
+
+  <dialog id="source-dialog" class="dialog" aria-labelledby="source-title">
+    <div class="dialog-title"><h2 id="source-title">출처와 축척</h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
+    <p>지구와 달은 반지름과 평균 중심 거리에 같은 축척을 적용했습니다. 태양계·항성계의 강조된 천체 크기와 B612 항로는 관측을 위한 연출입니다.</p>
+    <ul class="source-list">
+      <li><a href="https://science.nasa.gov/moon/by-the-numbers/" target="_blank" rel="noopener noreferrer">지구–달 거리와 달 제원 · NASA ↗</a></li>
+      <li><a href="https://solarsystem.nasa.gov/solar-system/sun/in-depth.amp" target="_blank" rel="noopener noreferrer">태양과 알파 센타우리 A까지의 거리 · NASA ↗</a></li>
+      <li><a href="https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/" target="_blank" rel="noopener noreferrer">지구 표면 · NASA GSFC, Reto Stöckli, Robert Simmon ↗</a></li>
+      <li><a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener noreferrer">달 표면 · NASA SVS, Ernie Wright ↗</a></li>
+      <li><a href="https://science.nasa.gov/photojournal/pale-blue-dot-revisited/" target="_blank" rel="noopener noreferrer">창백한 푸른 점 · NASA/JPL-Caltech ↗</a></li>
+      <li><a href="https://www.lepetitprince.com/en/new-products-from-our-licensees/cutebee-unveils-two-book-nooks-inspired-by-the-little-prince/" target="_blank" rel="noopener noreferrer">B612의 장미와 유리 덮개 · 어린 왕자 공식 사이트 ↗</a></li>
+    </ul>
+    <p class="small">지구–태양 평균 거리를 1cm로 줄이면 알파 센타우리 A까지 약 2.76km입니다. 거리 카드에는 약 2.8km로 표시합니다. 배경음과 효과음은 이 장면용으로 합성했습니다.</p>
+  </dialog>
+  <dialog id="earth-dialog" class="earth-dialog" aria-labelledby="earth-title">
+    <span class="earth-point-label" aria-hidden="true">지구</span>
+    <div class="earth-caption">
+      <p class="eyebrow">지구 돌아보기</p>
+      <h2 id="earth-title">우리가 떠나온 곳</h2>
+      <p id="earth-note"></p>
+      <button type="button" id="earth-return" class="button" data-close autofocus>항로로 돌아가기</button>
+    </div>
+  </dialog>
+  <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
+    <div class="dialog-title"><h2 id="confirm-title"></h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
+    <p id="confirm-copy"></p>
+    <div class="buttons"><button type="button" id="confirm-action" class="button primary"></button><button type="button" class="button" data-close>취소</button></div>
+  </dialog>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
