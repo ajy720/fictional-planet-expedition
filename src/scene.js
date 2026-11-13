@@ -321,6 +321,37 @@ export async function createScene(container, labels, lookLabels) {
     homeDot.scale.setScalar(.86);
   }
 
+  const roseTarget = asteroid.surface.clone().addScaledVector(asteroid.normal, .19);
+  const roseTangent = vector(0, 1, 0).cross(asteroid.normal).normalize();
+  const rosePosition = roseTarget.clone().addScaledVector(asteroid.normal, .68).addScaledVector(roseTangent, 1.27);
+  const orbitDirection = new THREE.Vector3();
+  const roseDirection = rosePosition.clone().normalize();
+  const cameraArc = new THREE.Quaternion();
+  const fullArc = new THREE.Quaternion();
+  const orbitRotation = new THREE.Quaternion();
+  const roseRotation = new THREE.Quaternion();
+  const rotationMatrix = new THREE.Matrix4();
+
+  function orbitView(orbit) {
+    const { radius, phi, theta } = orbit;
+    spherical.set(radius, phi, theta);
+    return orbitPosition.setFromSpherical(spherical);
+  }
+
+  function roseTransition(orbit, progress) {
+    // Follow an arc around B612 so the camera stays above the terrain.
+    const start = orbitView(orbit);
+    lookAt(start, stageLook);
+    orbitRotation.copy(camera.quaternion);
+    roseRotation.setFromRotationMatrix(rotationMatrix.lookAt(rosePosition, roseTarget, asteroid.normal));
+    orbitDirection.copy(start).normalize();
+    fullArc.setFromUnitVectors(orbitDirection, roseDirection);
+    cameraArc.identity().slerp(fullArc, progress);
+    camera.position.copy(orbitDirection).applyQuaternion(cameraArc)
+      .multiplyScalar(math.lerp(orbit.radius, rosePosition.length(), progress));
+    camera.quaternion.slerpQuaternions(orbitRotation, roseRotation, progress);
+  }
+
   function render(view) {
     labels.replaceChildren();
     lookLabels.replaceChildren();
@@ -344,18 +375,17 @@ export async function createScene(container, labels, lookLabels) {
       flightFrame(view.elapsed, view.reduceMotion);
     } else {
       setScene('asteroid');
-      if (view.screen === 'orbit') {
-        const { radius, phi, theta } = view.orbit;
-        spherical.set(radius, phi, theta);
-        lookAt(orbitPosition.setFromSpherical(spherical), stageLook);
+      if (view.roseProgress !== undefined) {
+        roseTransition(view.orbit, view.roseProgress);
+      } else if (view.screen === 'orbit') {
+        lookAt(orbitView(view.orbit), stageLook);
       } else {
-        const target = asteroid.surface.clone().addScaledVector(asteroid.normal, .19);
-        const tangent = vector(0, 1, 0).cross(asteroid.normal).normalize();
-        const close = target.clone().addScaledVector(asteroid.normal, .68).addScaledVector(tangent, 1.27);
+        const target = roseTarget.clone();
+        const close = rosePosition.clone();
         camera.up.copy(asteroid.normal);
         if (view.screen === 'log') {
           const right = target.clone().sub(close).cross(camera.up).normalize();
-          close.addScaledVector(tangent, .19);
+          close.addScaledVector(roseTangent, .19);
           target.addScaledVector(right, -.49);
         }
         lookAt(close, target);

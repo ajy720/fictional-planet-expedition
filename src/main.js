@@ -23,6 +23,7 @@ let lastTime = 0;
 let lastSave = 0;
 let previousNodes = '';
 let rosePoint;
+let roseMove;
 let pointer;
 let confirmAction;
 let activeDialog;
@@ -97,8 +98,9 @@ function renderNodes(names, current) {
 }
 
 function renderScene() {
-  scene?.render({ ...state, reduceMotion: reduced.matches });
-  rosePoint = state.screen === 'orbit' && !activeDialog ? scene?.visibleRose() : null;
+  const roseProgress = roseMove && (roseMove.destination === 'rose' ? roseMove.progress : 1 - roseMove.progress);
+  scene?.render({ ...state, roseProgress, reduceMotion: reduced.matches });
+  rosePoint = !roseMove && state.screen === 'orbit' && !activeDialog ? scene?.visibleRose() : null;
   const button = $('observe');
   if (!rosePoint && button === document.activeElement) $('stage-title').focus({ preventScroll: true });
   show('observe', Boolean(rosePoint));
@@ -144,8 +146,8 @@ function renderScreen() {
   show('flight-actions', flying);
   show('step-flight', flying && reduced.matches);
   show('pause-flight', flying && !reduced.matches);
-  show('orbit-actions', orbiting);
-  show('rose-actions', inspecting);
+  show('orbit-actions', orbiting && !roseMove);
+  show('rose-actions', inspecting && !roseMove);
   show('cover', inspecting && !state.covered);
   show('keep-looking', inspecting && !state.covered);
   show('record', inspecting && state.covered);
@@ -175,7 +177,7 @@ function renderScreen() {
       ? (reduced.matches ? '정지 화면으로 비행 구간을 살펴보세요.' : state.paused ? '현재 위치에서 비행을 멈췄습니다.' : '관측창 너머로 B612가 가까워집니다.')
       : orbiting ? '드래그로 회전 · 휠 또는 + / −로 확대와 축소'
         : state.covered ? '장미를 유리 덮개로 보호했습니다.' : '장미 위에 유리 덮개를 씌우세요.';
-    copy('instruction', message);
+    copy('instruction', roseMove ? (orbiting ? '장미에 접근하는 중…' : '이전 관측 위치로 돌아가는 중…') : message);
     copy('pause-flight', state.paused ? '계속 비행' : '일시정지');
   }
   renderScene();
@@ -204,6 +206,7 @@ function sound() {
 }
 
 function transition(screen, changes = {}) {
+  roseMove = undefined;
   state = { ...state, ...changes, screen };
   lastTime = 0;
   updateScrollArea();
@@ -241,10 +244,26 @@ function goToSection(index) {
   scrollToProgress(section.at);
 }
 
+function finishRoseMove(destination) {
+  transition(destination);
+  if (destination === 'rose') announce('장미를 찾았습니다.');
+}
+
+function moveRoseCamera(destination) {
+  if (roseMove || activeDialog || failure) return;
+  if (reduced.matches) {
+    finishRoseMove(destination);
+    return;
+  }
+  roseMove = { destination, progress: 0, elapsed: 0 };
+  lastTime = 0;
+  renderScreen();
+  $('stage-title').focus({ preventScroll: true });
+}
+
 function observe() {
   if (state.screen !== 'orbit' || !rosePoint) return;
-  transition('rose');
-  announce('장미를 찾았습니다.');
+  moveRoseCamera('rose');
 }
 
 const directions = {
@@ -253,7 +272,7 @@ const directions = {
 };
 
 function moveOrbit(x, y, scale) {
-  if (state.screen !== 'orbit' || activeDialog || failure) return;
+  if (state.screen !== 'orbit' || roseMove || activeDialog || failure) return;
   adjustOrbit(state.orbit, x, y, scale);
   renderScene();
   throttledSave();
@@ -264,7 +283,7 @@ function bindCanvas(canvas) {
     return rosePoint && Math.abs(x - rosePoint.x) <= 22 && Math.abs(y - rosePoint.y) <= 22;
   }
   canvas.addEventListener('pointerdown', event => {
-    if (state.screen !== 'orbit' || event.button !== 0 || pointer) return;
+    if (state.screen !== 'orbit' || roseMove || event.button !== 0 || pointer) return;
     canvas.setPointerCapture(event.pointerId);
     pointer = { id: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, dragging: false };
   });
@@ -465,9 +484,11 @@ $('step-flight').addEventListener('click', () => {
   } else transition('orbit');
 });
 $('observe').addEventListener('click', observe);
-$('keep-looking').addEventListener('click', () => transition('orbit'));
+$('keep-looking').addEventListener('click', () => {
+  if (state.screen === 'rose' && !state.covered) moveRoseCamera('orbit');
+});
 $('cover').addEventListener('click', () => {
-  if (state.screen !== 'rose' || state.covered) return;
+  if (state.screen !== 'rose' || state.covered || roseMove) return;
   state.covered = true;
   renderScreen();
   save();
@@ -539,6 +560,18 @@ document.addEventListener('visibilitychange', () => {
 
 function tick(now) {
   requestAnimationFrame(tick);
+  if (roseMove && scene && !booting && !failure && !activeDialog && !document.hidden) {
+    if (lastTime) roseMove.elapsed += now - lastTime;
+    lastTime = now;
+    const duration = roseMove.destination === 'rose' ? 950 : 800;
+    const t = Math.min(1, roseMove.elapsed / duration);
+    if (t === 1 || reduced.matches) finishRoseMove(roseMove.destination);
+    else {
+      roseMove.progress = t * t * (3 - 2 * t);
+      renderScene();
+    }
+    return;
+  }
   if (state.screen !== 'flight' || !scene || booting || failure || state.paused || activeDialog || reduced.matches || document.hidden || !document.hasFocus()) {
     lastTime = 0;
     return;
