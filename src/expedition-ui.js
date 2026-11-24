@@ -587,11 +587,18 @@ export function createExpeditionUI(callbacks) {
     $('directory-entries').replaceChildren(...entries);
   }
 
-  function renderCommunication(progress) {
+  function renderCommunication(progress, replaying = false) {
     const stage = communicationStage(progress);
-    $('communication-progress').value = progress / communicationProgressMax;
+    const fraction = progress / communicationProgressMax;
+    const signal = $('signal-visual');
+    signal.dataset.leg = ['outbound', 'returning', 'received'][stage];
+    signal.style.setProperty('--packet-position', 200 * Math.min(fraction, 1 - fraction) + '%');
+    copy('signal-status', t(['communication.signalOutbound', 'communication.signalReturning', 'communication.signalReceived'][stage]));
+    $('communication-progress').value = fraction;
+    show('replay-communication', stage === 2 || replaying);
+    $('replay-communication').setAttribute('aria-disabled', String(replaying));
     $('signal-stages').querySelectorAll('li').forEach((item, i) => {
-      item.hidden = i > stage;
+      item.classList.toggle('pending', i > stage);
       if (i === stage) item.setAttribute('aria-current', 'step');
       else item.removeAttribute('aria-current');
     });

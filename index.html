@@ -283,13 +283,24 @@
       <p data-copy="communication.assumption"></p>
       <p class="eyebrow" data-copy="communication.playback"></p>
       <p class="small" data-copy="communication.playbackScale"></p>
+      <div id="signal-visual" class="signal-visual">
+        <div class="signal-path" aria-hidden="true">
+          <div class="signal-track"><i class="signal-packet"></i></div>
+          <div class="signal-endpoint signal-earth"><span data-copy="common.earth"></span></div>
+          <div class="signal-endpoint signal-pandora"><span data-copy="world.pandora.name"></span></div>
+        </div>
+        <div id="signal-status" class="signal-status"></div>
+      </div>
       <ol id="signal-stages" class="signal-stages">
         <li><span data-copy="communication.stageSend"></span> <strong data-copy="communication.zeroYears"></strong></li>
         <li><span data-copy="communication.stageArrival"></span> <strong data-copy="communication.arrivalYears"></strong></li>
         <li><span data-copy="communication.stageReply"></span> <strong data-copy="communication.replyYears"></strong></li>
       </ol>
       <progress id="communication-progress" value="0" data-copy-aria-label="communication.progress"></progress>
-      <div class="buttons"><button type="button" id="communication-return" class="button" data-close data-copy="common.returnToRoute"></button></div>
+      <div class="buttons">
+        <button type="button" id="communication-return" class="button" data-close data-copy="common.returnToRoute"></button>
+        <button type="button" id="replay-communication" class="button" hidden data-copy="communication.replay"></button>
+      </div>
     </div>
   </dialog>
   <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">

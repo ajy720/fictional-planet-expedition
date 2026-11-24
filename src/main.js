@@ -53,6 +53,7 @@ let pointer;
 let confirmation;
 let activeDialog;
 let dialogTrigger;
+let communicationReplay = null;
 let routeLoad;
 let departureHeight = 0;
 let launchInput = false;
@@ -625,6 +626,7 @@ function finishDialog(dialog) {
   }
   if (dialog.id === 'communication-dialog' || dialog.id === 'earth-dialog') {
     state.communicationOpen = false;
+    communicationReplay = null;
     state.look = null;
     renderScreen();
     sound();
@@ -1272,6 +1274,12 @@ $('transmit').addEventListener('click', () => {
   restoreDialog();
   copy('transmit', t('communication.history'));
 });
+$('replay-communication').addEventListener('click', () => {
+  if (communicationReplay !== null || state.communication !== communicationProgressMax) return;
+  communicationReplay = 0;
+  lastTime = 0;
+  ui.renderCommunication(communicationReplay, true);
+});
 
 function tickExpedition(now, viewpointChanged) {
   const screen = state.screen;
@@ -1284,17 +1292,25 @@ function tickExpedition(now, viewpointChanged) {
   const delta = lastTime ? now - lastTime : 0;
   lastTime = now;
   if (communicating) {
-    if (state.communication < communicationProgressMax) {
-      const step = communicationStage(state.communication);
-      state.communication = Math.min(communicationProgressMax,
-        state.communication + delta * communicationProgressMax / communicationPlaybackMs);
-      ui.renderCommunication(state.communication);
-      const nextStep = communicationStage(state.communication);
-      if (nextStep > step) {
+    const replaying = communicationReplay !== null;
+    const previousProgress = communicationReplay ?? state.communication;
+    if (previousProgress < communicationProgressMax) {
+      const progress = Math.min(communicationProgressMax,
+        previousProgress + delta * communicationProgressMax / communicationPlaybackMs);
+      const complete = progress === communicationProgressMax;
+      if (replaying) {
+        communicationReplay = complete ? null : progress;
+      } else {
+        state.communication = progress;
+        if (complete) save();
+        else throttledSave();
+      }
+      ui.renderCommunication(progress, replaying && !complete);
+      const nextStep = communicationStage(progress);
+      if (nextStep > communicationStage(previousProgress)) {
         announce(t(nextStep === 2 ? 'communication.replyAnnouncement' : 'communication.arrivalAnnouncement'));
         if (state.sound) audio.effect();
       }
-      throttledSave();
     }
   } else if (screen === 'route-flight') {
     if (atPetrovaCheckpoint() || (state.paused || reduced.matches) && routePhase() !== 3) return true;
@@ -1490,6 +1506,7 @@ function localizeScreen() {
   previousNodes = '';
   copy('status', '');
   renderScreen();
+  if (state.communicationOpen) ui.renderCommunication(communicationReplay ?? state.communication, communicationReplay !== null);
   if (state.look) renderEarthDialog();
   if (confirmation) renderConfirmation();
   if (failure && errorKey) copy('error-copy', t(errorKey));
