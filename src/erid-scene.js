@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { echoNames } from './destinations.js';
+import { echoName } from './destinations.js';
 import { echoDuration, echoInProgress, echoSpeed, echoTargets, emitterPosition } from './erid-sonar.js';
 import { glow } from './models.js';
 
@@ -266,7 +266,7 @@ export function createEridScene() {
       captions = reflectors.flatMap((reflector, index) => {
         const strength = reflector.update(elapsed, scanning, reduced, !data.observing && data.complete);
         return scanning && strength > .08
-          ? [{ index, name: echoNames[index], position: reflector.label, opacity: Math.min(1, strength * 1.4) }] : [];
+          ? [{ index, name: echoName(index), position: reflector.label, opacity: Math.min(1, strength * 1.4) }] : [];
       });
     }
   };

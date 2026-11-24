@@ -1,8 +1,9 @@
+import { t } from './copy/index.js';
 import * as THREE from 'three';
 import { atmosphere, glow, makeB612, randomSequence } from './models.js';
 import { createExpeditionScenes } from './expedition-scene.js';
 import { introSectionAt } from './intro.js';
-import { createSpatialTitle, projectAnchor } from './spatial-title.js';
+import { createSpatialTitle, projectAnchor, updateSpatialTitle } from './spatial-title.js';
 
 const vector = (x, y, z) => new THREE.Vector3(x, y, z);
 const ORBIT_START = vector(.4, .28, 1).normalize();
@@ -24,7 +25,7 @@ export async function createScene(container, labels, lookLabels) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.18;
   renderer.domElement.tabIndex = -1;
-  renderer.domElement.setAttribute('aria-label', '3D 관측창. B612 도착 후 방향키로 회전하고 + 또는 −로 확대하거나 축소할 수 있습니다.');
+  renderer.domElement.setAttribute('aria-label', t('common.initialCanvasLabel'));
   container.replaceChildren(renderer.domElement);
 
   const camera = new THREE.PerspectiveCamera(43, 1, .01, 2600);
@@ -149,7 +150,7 @@ export async function createScene(container, labels, lookLabels) {
 
   const asteroid = makeB612();
   const expedition = createExpeditionScenes(renderer, camera, asteroid, earthSphere);
-  const b612Title = createSpatialTitle('B612');
+  const b612Title = createSpatialTitle(t('world.b612.name'));
   const titleRight = vector(0, 1, 0).cross(ORBIT_START).normalize();
   b612Title.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(ORBIT_START, vector(0, 0, 0), vector(0, 1, 0)));
   b612Title.rotateY(-.2);
@@ -280,9 +281,9 @@ export async function createScene(container, labels, lookLabels) {
     renderWorld();
     terrain.transparent = false;
     terrain.opacity = 1;
-    label('지구', earth, math.smoothstep(position, .19, .26));
-    label('달', moon, math.smoothstep(position, .18, .24) * (1 - math.smoothstep(position, .45, .62)));
-    label('태양', sun, math.smoothstep(position, .67, .77));
+    label(t('common.earth'), earth, math.smoothstep(position, .19, .26));
+    label(t('common.moon'), moon, math.smoothstep(position, .18, .24) * (1 - math.smoothstep(position, .45, .62)));
+    label(t('common.sun'), sun, math.smoothstep(position, .67, .77));
   }
 
   function flightFrame(elapsed, reduceMotion) {
@@ -327,8 +328,8 @@ export async function createScene(container, labels, lookLabels) {
       };
     }
     const labelOpacity = 1 - math.smoothstep(progress, 0, .13);
-    label('지구', earth, labelOpacity);
-    label('태양', sun, labelOpacity);
+    label(t('common.earth'), earth, labelOpacity);
+    label(t('common.sun'), sun, labelOpacity);
   }
 
   function earthFrame(mode, reference) {
@@ -336,8 +337,8 @@ export async function createScene(container, labels, lookLabels) {
     if (mode === 'stellar') {
       lookAt(vector(0, .35, 13.5), stageLook);
       renderWorld();
-      label('태양계', homeDot, 1, lookLabels);
-      label('알파 센타우리 A', alpha, 1, lookLabels);
+      label(t('common.solarSystem'), homeDot, 1, lookLabels);
+      label(t('world.pandora.referenceName'), alpha, 1, lookLabels);
       return;
     }
     if (mode === 'moon') {
@@ -450,6 +451,7 @@ export async function createScene(container, labels, lookLabels) {
     } else {
       setScene('asteroid');
       if (view.screen === 'orbit' || view.roseProgress !== undefined) {
+        updateSpatialTitle(b612Title, t('world.b612.name'));
         const narrow = camera.aspect < 1.15;
         b612Title.position.copy(ORBIT_START).multiplyScalar(-.82)
           .addScaledVector(titleRight, narrow ? -.8 : -1.69);

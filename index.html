@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#05080e">
-  <meta name="description" content="지구에서 출발해 영화와 소설 속 일곱 천체를 관찰하는 3D 탐사">
+  <meta name="description" data-copy-content="common.description">
   <link rel="icon" href="data:,">
-  <title>상상 속 행성까지</title>
+  <title data-copy="common.appTitle"></title>
 </head>
 <body>
   <div id="scene" class="scene"></div>
@@ -14,38 +14,38 @@
   <div id="view-fade" aria-hidden="true"></div>
   <div id="scroll-track" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="wordmark" href="./" aria-label="상상 속 행성까지 시작 화면">
-      <span class="orbit-mark" aria-hidden="true"></span><span>상상 속 행성까지</span>
+    <a class="wordmark" href="./" data-copy-aria-label="common.homeLink">
+      <span class="orbit-mark" aria-hidden="true"></span><span data-copy="common.appTitle"></span>
     </a>
-    <ol id="route-nodes" class="route-nodes" aria-label="비행 단계" hidden></ol>
+    <ol id="route-nodes" class="route-nodes" data-copy-aria-label="flight.nodes" hidden></ol>
     <div class="utilities">
       <button type="button" id="sound" class="utility" hidden><span class="sound-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="sound-label"></span></button>
-      <button type="button" id="sources" class="utility">탐사 소개와 출처 <span aria-hidden="true">↗</span></button>
+      <button type="button" id="sources" class="utility"><span data-copy="source.title"></span> <span aria-hidden="true">↗</span></button>
     </div>
   </header>
   <main>
     <section id="welcome" class="welcome" aria-labelledby="title">
       <div class="welcome-content">
-        <h1 id="title" tabindex="-1">상상 속<br>행성까지</h1>
-        <p class="welcome-copy">지구에서 출발해 작품 속 일곱 천체를 탐사하세요.<br>첫 목적지는 어린 왕자의 소행성 B612입니다.</p>
+        <h1 id="title" tabindex="-1" data-copy="welcome.title"></h1>
+        <p class="welcome-copy" data-copy="welcome.description"></p>
         <div id="start-actions" class="start-actions">
-          <button type="button" id="start-sound" class="button primary">소리와 함께 시작 <span aria-hidden="true">↗</span></button>
-          <button type="button" id="start-muted" class="button">조용히 시작 <span aria-hidden="true">↗</span></button>
+          <button type="button" id="start-sound" class="button primary"><span data-copy="welcome.startSound"></span> <span aria-hidden="true">↗</span></button>
+          <button type="button" id="start-muted" class="button"><span data-copy="welcome.startMuted"></span> <span aria-hidden="true">↗</span></button>
         </div>
         <div id="resume-actions" class="start-actions" hidden>
-          <button type="button" id="resume" class="button primary">이어서 탐사 <span aria-hidden="true">↗</span></button>
-          <button type="button" id="new-journey" class="button">새 여정</button>
+          <button type="button" id="resume" class="button primary"><span data-copy="welcome.resume"></span> <span aria-hidden="true">↗</span></button>
+          <button type="button" id="new-journey" class="button" data-copy="welcome.newJourney"></button>
         </div>
         <p id="welcome-status" role="status" class="small" hidden></p>
       </div>
-      <span id="welcome-earth" class="world-caption" aria-hidden="true" hidden>지구</span>
-      <p class="welcome-footer">Network Media · Final Project</p>
+      <span id="welcome-earth" class="world-caption" aria-hidden="true" hidden data-copy="common.earth"></span>
+      <p class="welcome-footer" data-copy="welcome.footer"></p>
     </section>
 
     <section id="journey" class="journey" aria-labelledby="stage-title" hidden>
       <div id="optics-frame" class="optics-frame" aria-hidden="true" hidden>
         <span id="optics-mode"></span>
-        <span class="optics-star">타우 세티</span>
+        <span class="optics-star" data-copy="world.adrian.referenceName"></span>
       </div>
       <div id="scene-labels" class="scene-labels" aria-hidden="true"></div>
       <div id="orbit-labels" class="scene-labels" aria-hidden="true" hidden></div>
@@ -67,108 +67,107 @@
         <div class="scene-actions">
           <p id="instruction" class="small"></p>
           <div id="intro-actions" class="buttons" hidden>
-            <button type="button" id="prev-section" class="button">← 이전 구간</button>
-            <button type="button" id="next-section" class="button">다음 구간 →</button>
-            <button type="button" id="launch" class="button primary">B612로 출발 <span aria-hidden="true">↗</span></button>
+            <button type="button" id="prev-section" class="button" data-copy="intro.previous"></button>
+            <button type="button" id="next-section" class="button" data-copy="intro.next"></button>
+            <button type="button" id="launch" class="button primary"><span data-copy="intro.launch"></span> <span aria-hidden="true">↗</span></button>
           </div>
           <div id="flight-actions" class="buttons" hidden>
-            <button type="button" id="pause-flight" class="button">일시정지</button>
-            <button type="button" id="step-flight" class="button primary" hidden>다음 비행 단계 →</button>
+            <button type="button" id="pause-flight" class="button" data-copy="common.pause"></button>
+            <button type="button" id="step-flight" class="button primary" hidden data-copy="flight.nextStep"></button>
           </div>
-          <div id="optics-actions" class="buttons" role="group" aria-label="관측창 필터" hidden>
-            <button type="button" id="optics-visible" class="button" aria-pressed="true">가시광선</button>
-            <button type="button" id="optics-infrared" class="button" aria-pressed="false">적외선</button>
+          <div id="optics-actions" class="buttons" role="group" data-copy-aria-label="flight.opticsControls" hidden>
+            <button type="button" id="optics-visible" class="button" aria-pressed="true" data-copy="flight.visibleLight"></button>
+            <button type="button" id="optics-infrared" class="button" aria-pressed="false" data-copy="flight.infrared"></button>
           </div>
           <div id="petrova-callout" class="spatial-callout" hidden>
-            <button type="button" id="track-petrova" class="button primary">페트로바 선 따라가기</button>
+            <button type="button" id="track-petrova" class="button primary" data-copy="flight.trackPetrova"></button>
           </div>
           <div id="departure-actions" class="buttons" hidden>
-            <button type="button" id="departure-prev" class="button" hidden>← 이전 시점</button>
-            <button type="button" id="departure-next" class="button primary">다음 시점 →</button>
-            <button type="button" id="cancel-departure" class="button">취소</button>
+            <button type="button" id="departure-prev" class="button" hidden data-copy="flight.previousView"></button>
+            <button type="button" id="departure-next" class="button primary" data-copy="flight.nextView"></button>
+            <button type="button" id="cancel-departure" class="button" data-copy="common.cancel"></button>
           </div>
           <div id="surface-actions" class="surface-controls" hidden></div>
-          <button type="button" id="surface-record" class="button primary" data-action="record" hidden>탐사 기록 보기 <span aria-hidden="true">↗</span></button>
+          <button type="button" id="surface-record" class="button primary" data-action="record" hidden><span data-copy="common.viewRecord"></span> <span aria-hidden="true">↗</span></button>
           <div id="orbit-actions" class="buttons" hidden>
-            <div class="orbit-controls" role="group" aria-label="관측 카메라">
-              <button type="button" class="button icon" data-orbit="left" aria-label="왼쪽으로 회전">←</button>
-              <button type="button" class="button icon" data-orbit="right" aria-label="오른쪽으로 회전">→</button>
-              <button type="button" class="button icon" data-orbit="up" aria-label="위로 회전">↑</button>
-              <button type="button" class="button icon" data-orbit="down" aria-label="아래로 회전">↓</button>
-              <button type="button" class="button icon" data-orbit="in" aria-label="확대">+</button>
-              <button type="button" class="button icon" data-orbit="out" aria-label="축소">−</button>
+            <div class="orbit-controls" role="group" data-copy-aria-label="b612.cameraControls">
+              <button type="button" class="button icon" data-orbit="left" data-copy-aria-label="b612.rotateLeft">←</button>
+              <button type="button" class="button icon" data-orbit="right" data-copy-aria-label="b612.rotateRight">→</button>
+              <button type="button" class="button icon" data-orbit="up" data-copy-aria-label="b612.rotateUp">↑</button>
+              <button type="button" class="button icon" data-orbit="down" data-copy-aria-label="b612.rotateDown">↓</button>
+              <button type="button" class="button icon" data-orbit="in" data-copy-aria-label="b612.zoomIn">+</button>
+              <button type="button" class="button icon" data-orbit="out" data-copy-aria-label="b612.zoomOut">−</button>
             </div>
           </div>
           <div id="rose-actions" class="buttons" hidden>
-            <button type="button" id="keep-looking" class="button">← 궤도로 돌아가기</button>
+            <button type="button" id="keep-looking" class="button" data-copy="b612.backToOrbit"></button>
           </div>
           <div id="sprout-callout" class="spatial-callout" hidden>
-            <button type="button" id="pull-sprout" class="button primary">바오밥 싹 뽑기</button>
+            <button type="button" id="pull-sprout" class="button primary" data-copy="b612.removeSprout"></button>
           </div>
           <div id="rose-callout" class="spatial-callout" hidden>
-            <button type="button" id="observe" class="button primary" hidden>장미 관찰 <span aria-hidden="true">↗</span></button>
-            <button type="button" id="cover" class="button primary" hidden>유리 덮개 씌우기 <span aria-hidden="true">↗</span></button>
-            <button type="button" id="record" class="button primary" hidden>탐사 기록 보기 <span aria-hidden="true">↗</span></button>
+            <button type="button" id="observe" class="button primary" hidden><span data-copy="b612.observeRose"></span> <span aria-hidden="true">↗</span></button>
+            <button type="button" id="cover" class="button primary" hidden><span data-copy="b612.placeCover"></span> <span aria-hidden="true">↗</span></button>
+            <button type="button" id="record" class="button primary" hidden><span data-copy="common.viewRecord"></span> <span aria-hidden="true">↗</span></button>
           </div>
         </div>
         <div class="scene-utilities">
-          <button type="button" id="transmit" class="button" hidden>지구에서 인사 보내기</button>
-          <button type="button" id="look-back" class="button" hidden>지구 돌아보기 <span aria-hidden="true">↶</span></button>
-          <button type="button" id="abort" class="utility" hidden>탐사 중단</button>
+          <button type="button" id="transmit" class="button" hidden data-copy="communication.send"></button>
+          <button type="button" id="look-back" class="button" hidden><span data-copy="earthView.heading"></span> <span aria-hidden="true">↶</span></button>
+          <button type="button" id="abort" class="utility" hidden data-copy="common.abort"></button>
         </div>
       </div>
     </section>
 
     <section id="log" class="log-screen" aria-labelledby="log-title" hidden>
       <article class="log-panel">
-        <p class="eyebrow"><span></span> 탐사 기록 <strong id="log-count"></strong></p>
+        <p class="eyebrow"><span class="eyebrow-dot"></span> <span data-copy="record.heading"></span> <strong id="log-count"></strong></p>
         <h2 id="log-title" tabindex="-1"></h2>
         <p id="log-work" class="log-work"></p>
         <div class="log-entry">
-          <span class="eyebrow">관찰 결과</span>
+          <span class="eyebrow" data-copy="record.result"></span>
           <p id="log-result"></p>
           <ul id="log-details" class="record-details" hidden></ul>
           <div id="log-paths" hidden></div>
         </div>
         <div id="log-context" hidden></div>
         <div class="log-entry log-comparison">
-          <p class="eyebrow">현실과 비교</p>
+          <p class="eyebrow" data-copy="record.science"></p>
           <h3 id="log-question"></h3>
           <p id="log-comparison"></p>
           <a id="log-science" class="source-link" target="_blank" rel="noopener noreferrer" hidden></a>
         </div>
         <div class="log-entry">
-          <span class="eyebrow">거리 기준</span>
+          <span class="eyebrow" data-copy="record.distance"></span>
           <p id="log-distance"></p>
           <p id="log-distance-analogy" class="small distance-analogy" hidden></p>
         </div>
         <a id="log-source" class="source-link" target="_blank" rel="noopener noreferrer"></a>
         <div class="buttons log-actions">
-          <button type="button" id="log-ending" class="button primary" hidden>마지막 지구 돌아보기</button>
-          <button type="button" id="log-next" class="button primary">다음 목적지 선택</button>
-          <button type="button" id="log-back" class="button" hidden>목록으로 돌아가기</button>
-          <button type="button" id="log-stellar" class="button">가까운 항성계 보기 <span aria-hidden="true">↗</span></button>
-          <button type="button" id="log-earth" class="button">지구 돌아보기 <span aria-hidden="true">↶</span></button>
-          <button type="button" id="home" class="button">시작 화면</button>
+          <button type="button" id="log-ending" class="button primary" hidden data-copy="record.ending"></button>
+          <button type="button" id="log-next" class="button primary" data-copy="map.title"></button>
+          <button type="button" id="log-back" class="button" hidden data-copy="record.backToList"></button>
+          <button type="button" id="log-stellar" class="button"><span data-copy="record.stellar"></span> <span aria-hidden="true">↗</span></button>
+          <button type="button" id="log-earth" class="button"><span data-copy="earthView.heading"></span> <span aria-hidden="true">↶</span></button>
+          <button type="button" id="home" class="button" data-copy="common.home"></button>
         </div>
       </article>
-      <div class="log-dot" aria-hidden="true"><i></i> 지구</div>
+      <div class="log-dot" aria-hidden="true"><i></i> <span data-copy="common.earth"></span></div>
     </section>
 
     <section id="route-map" class="route-map" aria-labelledby="map-title" hidden>
       <div class="map-heading">
         <div>
           <p id="map-position" class="eyebrow"></p>
-          <h2 id="map-title" tabindex="-1">다음 목적지 선택</h2>
-          <p class="small">천체를 눌러 탐사 항로를 정하세요.</p>
+          <h2 id="map-title" tabindex="-1" data-copy="map.title"></h2>
         </div>
-        <button type="button" id="map-back" class="button">닫기</button>
+        <button type="button" id="map-back" class="button" data-copy="common.close"></button>
       </div>
-      <div id="map-markers" class="map-markers" role="group" aria-label="탐사 항로의 천체"></div>
+      <div id="map-markers" class="map-markers" role="group" data-copy-aria-label="map.markers"></div>
       <div class="map-footer">
         <div class="map-tools">
-          <button type="button" id="distance-open" class="button">지구 기준 거리 비교 <span aria-hidden="true">↗</span></button>
-          <p class="map-scale small">가상 항로 · 천체의 배치와 크기는 탐사용으로 조정했습니다.</p>
+          <button type="button" id="distance-open" class="button"><span data-copy="distance.openComparison"></span> <span aria-hidden="true">↗</span></button>
+          <p class="map-scale small" data-copy="map.scaleNote"></p>
         </div>
         <div id="map-inspection" class="map-inspection spatial-callout" hidden>
           <div class="map-world">
@@ -182,7 +181,7 @@
             <p id="map-flight-length" class="small" hidden></p>
           </div>
           <div class="buttons">
-            <button type="button" id="map-record" class="button" hidden>기록 보기</button>
+            <button type="button" id="map-record" class="button" hidden data-copy="map.readRecord"></button>
             <button type="button" id="map-travel" class="button primary" hidden></button>
           </div>
         </div>
@@ -192,113 +191,113 @@
     <section id="directory" class="directory-screen" aria-labelledby="directory-title" hidden>
       <article class="directory-panel">
         <div class="directory-heading">
-          <div><p id="directory-count" class="eyebrow"></p><h2 id="directory-title" tabindex="-1">전체 탐사 기록</h2></div>
-          <button type="button" id="directory-back" class="button">닫기</button>
+          <div><p id="directory-count" class="eyebrow"></p><h2 id="directory-title" tabindex="-1" data-copy="archive.title"></h2></div>
+          <button type="button" id="directory-back" class="button" data-copy="common.close"></button>
         </div>
         <p id="directory-position" class="small"></p>
         <div id="directory-entries" class="directory-entries"></div>
         <div id="directory-actions" class="buttons">
-          <button type="button" id="archive-next" class="button primary">다음 목적지 선택</button>
-          <button type="button" id="archive-earth" class="button">마지막 지구 다시 보기</button>
+          <button type="button" id="archive-next" class="button primary" data-copy="map.title"></button>
+          <button type="button" id="archive-earth" class="button" data-copy="archive.revisitEnding"></button>
         </div>
       </article>
     </section>
 
-    <section id="ending" class="ending-screen" aria-label="마지막 지구" hidden>
+    <section id="ending" class="ending-screen" data-copy-aria-label="ending.label" hidden>
       <div class="ending-caption">
-        <button type="button" id="ending-step" class="button" hidden>멀리서 지구 바라보기 →</button>
+        <button type="button" id="ending-step" class="button" hidden data-copy="ending.step"></button>
         <div id="ending-question" hidden>
-          <p class="eyebrow">지구 돌아보기</p>
-          <h2 id="ending-title" tabindex="-1">이 작은 점에 함께 사는 우리는<br>서로를 어떻게 대하며 살아가나요?</h2>
-          <button type="button" id="ending-records" class="button primary">탐사 기록 보기 ↗</button>
+          <p class="eyebrow" data-copy="earthView.heading"></p>
+          <h2 id="ending-title" tabindex="-1" data-copy="ending.question"></h2>
+          <button type="button" id="ending-records" class="button primary" data-copy="ending.openRecords"></button>
         </div>
       </div>
     </section>
 
     <p id="status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
-    <p id="save-warning" class="save-warning" role="status" hidden>이 브라우저에 탐사를 저장할 수 없습니다.</p>
+    <p id="save-warning" class="save-warning" role="status" hidden data-copy="error.save"></p>
     <section id="error" class="error-card" aria-labelledby="error-title" hidden>
-      <h2 id="error-title">3D 관측을 시작할 수 없습니다</h2>
+      <h2 id="error-title" data-copy="error.title"></h2>
       <p id="error-copy"></p>
-      <button type="button" id="retry" class="button primary">다시 불러오기</button>
-      <button type="button" id="error-back" class="button" hidden>출항 준비로 돌아가기</button>
+      <button type="button" id="retry" class="button primary" data-copy="error.retry"></button>
+      <button type="button" id="error-back" class="button" hidden data-copy="error.returnToLaunch"></button>
     </section>
   </main>
 
   <dialog id="source-dialog" class="dialog" aria-labelledby="source-title">
     <div class="dialog-content">
-      <div class="dialog-title"><h2 id="source-title">탐사 소개와 출처</h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
-      <p>지구에서 출발해 B612와 여섯 천체를 탐사합니다. 목적지에서 환경을 조작하고 결과를 기록한 뒤 지구를 다시 바라봅니다.</p>
-      <p>이 탐사에 영감을 준 두 발표에 감사드립니다.</p>
+      <div class="dialog-title"><h2 id="source-title" data-copy="source.title"></h2><button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button></div>
+      <p data-copy="source.description"></p>
+      <p data-copy="source.thanks"></p>
       <ul class="source-list">
-        <li>건국대학교 우주탐구회 박서연 〈지구 밖 여행 안내 — 여행지: 작품 속 천체들〉</li>
-        <li>서강대학교 별반 김준우 〈우주의 크기〉</li>
+        <li data-copy="source.firstTalk"></li>
+        <li data-copy="source.secondTalk"></li>
       </ul>
-      <p>지구와 달에는 같은 크기·거리 축척을 적용했습니다. 태양계의 바깥쪽 궤도 간격과 천체 크기는 화면에서 보이도록 조정했습니다. B612는 거리가 알려지지 않은 가상 항로입니다.</p>
+      <p data-copy="source.scaleNote"></p>
       <ul class="source-list">
-        <li><a href="https://eyes.nasa.gov/apps/solar-system/#/earth/" target="_blank" rel="noopener noreferrer">카메라 이동 참고 · NASA Eyes ↗</a></li>
-        <li><a href="https://science.nasa.gov/moon/by-the-numbers/" target="_blank" rel="noopener noreferrer">지구–달 거리와 달 제원 · NASA ↗</a></li>
-        <li><a href="https://solarsystem.nasa.gov/solar-system/sun/in-depth.amp" target="_blank" rel="noopener noreferrer">지구–태양 평균 거리 · NASA ↗</a></li>
-        <li><a href="https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/" target="_blank" rel="noopener noreferrer">지구 표면 · NASA GSFC, Reto Stöckli, Robert Simmon ↗</a></li>
-        <li><a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener noreferrer">달 표면 · NASA SVS, Ernie Wright ↗</a></li>
-        <li><a href="https://science.nasa.gov/photojournal/pale-blue-dot-revisited/" target="_blank" rel="noopener noreferrer">창백한 푸른 점 · NASA/JPL-Caltech ↗</a></li>
-        <li><a href="https://www.lepetitprince.com/en/new-products-from-our-licensees/cutebee-unveils-two-book-nooks-inspired-by-the-little-prince/" target="_blank" rel="noopener noreferrer">B612의 장미와 유리 덮개 · 어린 왕자 공식 사이트 ↗</a></li>
+        <li><a href="https://eyes.nasa.gov/apps/solar-system/#/earth/" target="_blank" rel="noopener noreferrer" data-copy="source.camera"></a></li>
+        <li><a href="https://science.nasa.gov/moon/by-the-numbers/" target="_blank" rel="noopener noreferrer" data-copy="source.moonFacts"></a></li>
+        <li><a href="https://solarsystem.nasa.gov/solar-system/sun/in-depth.amp" target="_blank" rel="noopener noreferrer" data-copy="source.sunFacts"></a></li>
+        <li><a href="https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/" target="_blank" rel="noopener noreferrer" data-copy="source.earthTexture"></a></li>
+        <li><a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener noreferrer" data-copy="source.moonTexture"></a></li>
+        <li><a href="https://science.nasa.gov/photojournal/pale-blue-dot-revisited/" target="_blank" rel="noopener noreferrer" data-copy="source.paleBlueDot"></a></li>
+        <li><a href="https://www.lepetitprince.com/en/new-products-from-our-licensees/cutebee-unveils-two-book-nooks-inspired-by-the-little-prince/" target="_blank" rel="noopener noreferrer" data-copy="source.rose"></a></li>
       </ul>
       <ul id="destination-sources" class="source-list"></ul>
-      <p class="small">서강대 거리 비유는 캠퍼스와 각 역의 위치를 기준으로 한 대략적인 직선거리입니다.</p>
+      <p class="small" data-copy="source.landmarkNote"></p>
       <ul class="source-list">
-        <li><a href="https://www.data.go.kr/data/15099316/fileData.do" target="_blank" rel="noopener noreferrer">서울 지하철역 위치 · 서울교통공사 ↗</a></li>
-        <li><a href="https://www.data.go.kr/data/15067652/fileData.do" target="_blank" rel="noopener noreferrer">전주역 위치 · 국가철도공단 ↗</a></li>
+        <li><a href="https://www.data.go.kr/data/15099316/fileData.do" target="_blank" rel="noopener noreferrer" data-copy="source.metro"></a></li>
+        <li><a href="https://www.data.go.kr/data/15067652/fileData.do" target="_blank" rel="noopener noreferrer" data-copy="source.railway"></a></li>
       </ul>
-      <p class="small">일곱 목적지의 배경음과 환경음, 조작 효과음은 이 체험을 위해 합성했습니다.</p>
+      <p class="small" data-copy="source.audio"></p>
     </div>
   </dialog>
   <dialog id="distance-dialog" class="dialog" aria-labelledby="distance-title">
     <div class="dialog-content distance-content">
-      <div class="dialog-title"><h2 id="distance-title">지구에서 얼마나 멀까?</h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
-      <p>작품 속 목적지와 연결된 실제 항성까지의 거리입니다. 눈금 한 칸마다 거리가 10배씩 늘어납니다.</p>
-      <p>서강대에 지구를 놓고 태양을 그 옆 1cm에 놓아 보세요. 같은 축척에서 별까지의 거리를 서강대에서 출발하는 직선거리로 비교할 수 있습니다.</p>
-      <div class="distance-ruler" aria-hidden="true"><span>1광년</span><span>10</span><span>100</span><span>1,000</span></div>
+      <div class="dialog-title"><h2 id="distance-title" data-copy="distance.title"></h2><button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button></div>
+      <p data-copy="distance.logScale"></p>
+      <p data-copy="distance.analogyHint"></p>
+      <div class="distance-ruler" aria-hidden="true"><span data-copy="distance.yearTick"></span><span data-copy="distance.tenTick"></span><span data-copy="distance.hundredTick"></span><span data-copy="distance.thousandTick"></span></div>
       <ul id="distance-comparison" class="distance-comparison"></ul>
       <p id="unscaled-worlds" class="small"></p>
     </div>
   </dialog>
   <dialog id="earth-dialog" class="earth-dialog" aria-labelledby="earth-title">
     <div id="look-labels" class="scene-labels" aria-hidden="true"></div>
-    <span class="earth-point-label" aria-hidden="true">지구</span>
+    <span class="earth-point-label" aria-hidden="true" data-copy="common.earth"></span>
     <div class="earth-caption">
-      <p id="earth-context" class="eyebrow">지구 돌아보기</p>
-      <h2 id="earth-title">우리가 떠나온 곳</h2>
+      <p id="earth-context" class="eyebrow" data-copy="earthView.heading"></p>
+      <h2 id="earth-title" data-copy="earthView.title"></h2>
       <p id="earth-note"></p>
       <p id="earth-distance-analogy" class="small distance-analogy" hidden></p>
       <p id="earth-angle" class="small" hidden></p>
       <a id="earth-reference" class="source-link" target="_blank" rel="noopener noreferrer" hidden></a>
-      <p id="stellar-distance" class="small" hidden>지구 기준 약 4.37광년 · 위치와 크기 강조<br><a href="https://apod.nasa.gov/rjn/apod/ap190413.html" target="_blank" rel="noopener noreferrer">알파 센타우리 A 거리 · NASA ↗</a></p>
-      <button type="button" id="earth-return" class="button" data-close autofocus>항로로 돌아가기</button>
+      <p id="stellar-distance" class="small" hidden><span data-copy="earthView.stellarDistance"></span><br><a href="https://apod.nasa.gov/rjn/apod/ap190413.html" target="_blank" rel="noopener noreferrer" data-copy="earthView.stellarSource"></a></p>
+      <button type="button" id="earth-return" class="button" data-close autofocus data-copy="common.returnToRoute"></button>
     </div>
   </dialog>
   <dialog id="communication-dialog" class="dialog communication-dialog" aria-labelledby="communication-title">
     <div class="dialog-content">
       <div class="dialog-title">
-        <h2 id="communication-title">지구 중계국</h2>
-        <button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button>
+        <h2 id="communication-title" data-copy="communication.title"></h2>
+        <button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button>
       </div>
-      <p>지구 중계국이 발신한 시점부터 계산합니다. 상대가 신호를 받자마자 답장을 보낸다고 가정합니다.</p>
-      <p class="eyebrow">시간 압축 재생</p>
+      <p data-copy="communication.assumption"></p>
+      <p class="eyebrow" data-copy="communication.playback"></p>
       <ol id="signal-stages" class="signal-stages">
-        <li>지구 중계국에서 발신 <strong>0년</strong></li>
-        <li>판도라 방향에 신호 도착 <strong>약 4.4년</strong></li>
-        <li>지구에서 답장 수신 <strong>발신 후 약 8.7년</strong></li>
+        <li><span data-copy="communication.stageSend"></span> <strong data-copy="communication.zeroYears"></strong></li>
+        <li><span data-copy="communication.stageArrival"></span> <strong data-copy="communication.arrivalYears"></strong></li>
+        <li><span data-copy="communication.stageReply"></span> <strong data-copy="communication.replyYears"></strong></li>
       </ol>
-      <progress id="communication-progress" max="8000" value="0" aria-label="통신 재생 진행"></progress>
-      <div class="buttons"><button type="button" id="communication-return" class="button" data-close>항로로 돌아가기</button></div>
+      <progress id="communication-progress" max="8000" value="0" data-copy-aria-label="communication.progress"></progress>
+      <div class="buttons"><button type="button" id="communication-return" class="button" data-close data-copy="common.returnToRoute"></button></div>
     </div>
   </dialog>
   <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
     <div class="dialog-content">
-      <div class="dialog-title"><h2 id="confirm-title"></h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
+      <div class="dialog-title"><h2 id="confirm-title"></h2><button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button></div>
       <p id="confirm-copy"></p>
-      <div class="buttons"><button type="button" id="confirm-action" class="button primary"></button><button type="button" class="button" data-close>취소</button></div>
+      <div class="buttons"><button type="button" id="confirm-action" class="button primary"></button><button type="button" class="button" data-close data-copy="common.cancel"></button></div>
     </div>
   </dialog>
   <script type="module" src="/src/main.js"></script>

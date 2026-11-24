@@ -1,6 +1,6 @@
 import { CanvasTexture, Mesh, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace, Vector3 } from 'three';
 
-export function createSpatialTitle(text) {
+function titleArtwork(text) {
   const image = document.createElement('canvas');
   image.width = 1024;
   image.height = 320;
@@ -18,11 +18,27 @@ export function createSpatialTitle(text) {
   const texture = new CanvasTexture(image);
   texture.colorSpace = SRGBColorSpace;
   texture.repeat.x = aspect * image.height / image.width;
-  const title = new Mesh(new PlaneGeometry(aspect, 1), new MeshBasicMaterial({
+  return { geometry: new PlaneGeometry(aspect, 1), texture };
+}
+
+export function createSpatialTitle(text) {
+  const { geometry, texture } = titleArtwork(text);
+  const title = new Mesh(geometry, new MeshBasicMaterial({
     map: texture, transparent: true, depthWrite: false, toneMapped: false, fog: false
   }));
+  title.userData.text = text;
   title.visible = false;
   return title;
+}
+
+export function updateSpatialTitle(title, text) {
+  if (title.userData.text === text) return;
+  const { geometry, texture } = titleArtwork(text);
+  title.geometry.dispose();
+  title.material.map.dispose();
+  title.geometry = geometry;
+  title.material.map = texture;
+  title.userData.text = text;
 }
 
 export function placeSpatialTitle(title, camera, distance, x, y, scale) {

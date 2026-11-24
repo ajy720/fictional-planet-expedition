@@ -199,10 +199,10 @@ export function createTatooineOrbit() {
   scene.add(starsLink);
 
   const bodies = [
-    { name: tatooineBodies.planet.name, position: positions.planet, marker: 'planet' },
-    { name: '공통 질량 중심', position: origin, marker: 'center' },
-    { name: tatooineBodies.primary.name, position: positions.primary, marker: 'primary' },
-    { name: tatooineBodies.secondary.name, position: positions.secondary, marker: 'secondary' }
+    { labelKey: tatooineBodies.planet.labelKey, position: positions.planet, marker: 'planet' },
+    { labelKey: 'tatooine.barycenter', position: origin, marker: 'center' },
+    { labelKey: tatooineBodies.primary.labelKey, position: positions.primary, marker: 'primary' },
+    { labelKey: tatooineBodies.secondary.labelKey, position: positions.secondary, marker: 'secondary' }
   ];
 
   return {

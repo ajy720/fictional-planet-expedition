@@ -1,14 +1,15 @@
+import { getLocale, localizeDom, onLocaleChange, t } from './copy/index.js';
 import './style.css';
 import { adjustOrbit, createScene, initialOrbit } from './scene.js';
 import { createAudio } from './audio.js';
 import { introSections, introSectionAt, lastIntroSection } from './intro.js';
 
-import { arrivalNodes, desertRoutes, destinations, distanceAnalogy, earthAngularDiameter, flightDuration, millerTimes, petrovaCheckpoint, routeFlight } from './destinations.js';
+import { arrivalNodes, desertRoutes, destinations, distanceAnalogy, earthAngularDiameter, flightDuration, millerTimes, petrovaCheckpoint } from './destinations.js';
 import { echoCount, echoInProgress, echoTargets } from './erid-sonar.js';
 import { newExpedition, restoreExpedition, saveVersion } from './expedition-state.js';
 import { createExpeditionUI } from './expedition-ui.js';
 import { departureStage, departureStops } from './routes-scene.js';
-import { advanceObservation, desertStep, desertSurveyDuration, eridSignal, markTatooineSunset, newObservation, recordDetails, tatooineShadowStatus, waterReport } from './observations.js';
+import { adrianObservationMagnification, advanceObservation, desertStep, desertSurveyDuration, eridSignal, markTatooineSunset, newObservation, recordDetails, tatooineShadowStatus, waterReport } from './observations.js';
 import { positionCallout } from './spatial-ui.js';
 import { binaryOrbit, groundSkyAt, orbitRates, outerOrbit } from './tatooine-orbit.js';
 
@@ -26,6 +27,7 @@ let state = { ...first, ...newExpedition(), screen: 'start', sound: false, orbit
 let scene;
 let booting = true;
 let failure = false;
+let errorKey;
 let contextLost = false;
 let scrollHeight = 0;
 let lastTime = 0;
@@ -45,7 +47,7 @@ const endingDuration = 6000;
 const parallax = { x: 0, y: 0 };
 const pointerAim = { x: 0, y: 0 };
 let pointer;
-let confirmAction;
+let confirmation;
 let activeDialog;
 let dialogTrigger;
 let routeLoad;
@@ -105,7 +107,7 @@ function renderNodes(names, current) {
     if (index === current) item.setAttribute('aria-current', 'step');
     if (index < current) {
       item.dataset.state = 'done';
-      title.textContent += ' · 지나온 구간';
+      title.textContent = t('flight.pastNode', { phase: name });
     }
     item.append(dot, title);
     return item;
@@ -161,14 +163,6 @@ function renderScene() {
   if (surveying && state.observation.optics === 'infrared') {
     positionCallout($('petrova-callout'), scene?.petrovaSignal(), { vertical: true });
   }
-  if (routed) {
-    const profile = routeFlight(state.from, state.destination);
-    const progress = Math.floor(state.elapsed / profile.duration * 100);
-    const reference = destinations[state.destination].reference;
-    const comparison = reference ? ` · 지구에서 빛으로 약 ${reference.lightYears}년` : '';
-    const note = `${profile.length} · 연출 ${profile.duration / 1000}초 · 진행 ${progress}%${comparison}`;
-    if ($('metric-note').textContent !== note) copy('metric-note', note);
-  }
   const inspectingRose = state.screen === 'rose' && !roseMove && !coverDrop;
   const orbiting = state.screen === 'orbit' && !roseMove;
   const sproutRemoved = state.observation.sproutRemoved;
@@ -222,19 +216,19 @@ function renderScreen() {
   show('resume-actions', Boolean(saved) || corrupt);
   show('resume', Boolean(saved));
   show('welcome-status', booting || corrupt);
-  copy('welcome-status', booting ? '관측 장면을 불러오는 중' : '이전 탐사를 열 수 없습니다.');
+  copy('welcome-status', booting ? t('common.loading') : t('welcome.corrupt'));
   for (const id of ['start-sound', 'start-muted', 'resume', 'new-journey']) $(id).disabled = booting;
   show('sound', !welcome && !ending);
   $('sound').setAttribute('aria-pressed', String(state.sound));
-  copy('sound-label', state.sound ? '소리 끄기' : '소리 켜기');
+  copy('sound-label', state.sound ? t('common.soundOff') : t('common.soundOn'));
   show('route-nodes', journey);
   if (scene) {
     scene.canvas.classList.toggle('orbit', orbiting);
     scene.canvas.classList.toggle('target', false);
     const onPandora = surface && state.destination === 'pandora';
     scene.canvas.tabIndex = orbiting || onPandora ? 0 : -1;
-    scene.canvas.setAttribute('aria-label', onPandora ? '판도라 관측창. 위아래 방향키로 시선을 움직입니다.'
-      : orbiting ? 'B612 관측창. 방향키로 회전하고 + 또는 −로 확대하거나 축소합니다.' : '3D 관측창');
+    scene.canvas.setAttribute('aria-label', onPandora ? t('pandora.canvasLabel')
+      : orbiting ? t('b612.canvasLabel') : t('common.canvasLabel'));
   }
 
   const reference = departure || routed || surface ? destinations[state.destination].reference : null;
@@ -249,7 +243,7 @@ function renderScreen() {
     $('stage-title').classList.remove('in-scene');
   }
   show('transmit', (departure || routed) && state.destination === 'pandora');
-  copy('transmit', state.communication === null ? '지구에서 인사 보내기' : '통신 기록 보기');
+  copy('transmit', state.communication === null ? t('communication.send') : t('communication.history'));
   show('intro-actions', scaling);
   show('prev-section', scaling && phase > 0);
   show('next-section', scaling && phase < lastIntroSection);
@@ -263,7 +257,7 @@ function renderScreen() {
     $('optics-visible').setAttribute('aria-pressed', String(!infrared));
     $('optics-infrared').setAttribute('aria-pressed', String(infrared));
     $('optics-frame').classList.toggle('infrared', infrared);
-    copy('optics-mode', infrared ? '적외선 · 의사색 영상' : '가시광선');
+    copy('optics-mode', infrared ? t('flight.infraredImage') : t('flight.visibleLight'));
   }
   show('flight-actions', flying && !surveying);
   show('step-flight', flying && reduced.matches && (!routed || routePhase() < 3));
@@ -279,57 +273,59 @@ function renderScreen() {
   if (scaling) {
     const data = introSections[phase];
     renderNodes(introSections.map(section => section.title), phase);
-    copy('stage-context', '첫 목적지 · B612');
+    copy('stage-context', t('intro.firstDestination'));
     copy('stage-title', data.title);
-    copy('stage-description', data.subtitle);
+    copy('stage-description', '');
     copy('metric-label', data.label);
     copy('metric', data.value);
     copy('metric-note', data.note);
-    copy('instruction', phase === lastIntroSection ? '계속 스크롤하면 B612 자동 비행이 시작됩니다.' : '스크롤하여 지구에서 멀어지세요.');
+    copy('instruction', phase === lastIntroSection ? t('intro.scrollToLaunch') : t('intro.scrollAway'));
   } else if (departure || routed || surface) {
     const destination = destinations[state.destination];
     const origin = destinations[state.from];
     const nodes = departure
-      ? [origin.name + ' 근접', '주변 천체', '항로 조망']
-      : [origin.name + ' 이탈', '항로 순항', destination.name + ' 접근', '도착'];
+      ? [t('flight.nearOrigin', { origin: origin.name }), t('flight.nearby'), t('flight.routeView')]
+      : [t('flight.leavingOrigin', { origin: origin.name }), t('flight.cruise'), t('flight.approach', { destination: destination.name }), t('flight.arrived')];
     const phase = departure ? departureStage(state.launchProgress) : surface ? 3 : routePhase();
     renderNodes(nodes, phase);
-    copy('stage-context', origin.name + ' → ' + destination.name);
-    copy('stage-title', surface ? destination.name : surveying ? '페트로바 선 관측' : nodes[phase]);
-    copy('stage-description', surface ? destination.observation : `《${departure ? origin.work : destination.work}》`);
-    copy('metric-label', '목적지 거리 기준');
+    copy('stage-context', t('flight.route', { origin: origin.name, destination: destination.name }));
+    copy('stage-title', surface ? destination.name : surveying ? t('flight.petrovaTitle') : nodes[phase]);
+    copy('stage-description', surface ? destination.observation : t('common.workTitle', { work: departure ? origin.work : destination.work }));
+    copy('metric-label', t('flight.distanceLabel'));
     copy('metric', destination.distance);
-    copy('metric-note', departure ? '스크롤로 시점 이동' : '');
+    copy('metric-note', routed ? t(reference ? 'flight.progressWithLightTime' : 'flight.progress', {
+      second: flightDuration(state.from, state.destination) / 1000
+    }) : '');
     copy('flight-target-name', destination.name);
     show('departure-prev', departure && phase > 0);
-    if (departure) copy('departure-next', phase === 2 ? '자동 항해로 이어가기 →' : '다음 시점 →');
+    if (departure) copy('departure-next', phase === 2 ? t('flight.continueToCruise') : t('flight.nextView'));
     if (surface) ui.renderSurface(state);
-    else copy('instruction', departure ? (phase === 2 ? '계속 멀어지면 목적지를 향해 자동 항해를 시작합니다.'
-      : `스크롤로 ${origin.name}에서 멀어지며 주변 천체를 살펴보세요.`)
-      : surveying ? infrared ? '띠가 닿는 행성을 찾았습니다. 페트로바 선을 따라가세요.' : '가시광선에서는 타우 세티와 행성 사이에 띠가 보이지 않습니다. 적외선으로 바꿔 보세요.'
-        : arrival ? '관측 시점으로 이동하는 중…'
-        : state.elapsed === flightDuration(state.from, state.destination) ? '관측 장면을 불러오는 중'
-        : reduced.matches ? '정지 화면으로 비행 구간을 살펴보세요.'
-          : state.paused ? '현재 위치에서 비행을 멈췄습니다.' : '관측창 너머로 목적지가 가까워집니다.');
-    copy('pause-flight', state.paused ? '계속 비행' : '일시정지');
+    else copy('instruction', departure ? (phase === 2 ? t('flight.scrollToCruise')
+      : t('flight.scrollFromOrigin', { origin: origin.name }))
+      : surveying ? infrared ? t('flight.infraredHint') : t('flight.visibleHint')
+        : arrival ? t('flight.arrivalTransition')
+        : state.elapsed === flightDuration(state.from, state.destination) ? t('common.loading')
+        : reduced.matches ? t('flight.reducedMotion')
+          : state.paused ? t('flight.paused') : '');
+    copy('pause-flight', state.paused ? t('flight.resume') : t('common.pause'));
   } else if (flying || orbiting || inspecting) {
     const approaching = state.elapsed >= 5000;
-    renderNodes(['B612 순항', 'B612 접근', '근접 관측'], flying ? Number(approaching) : 2);
-    copy('stage-context', inspecting ? 'B612 · 장미 관측' : (destinations[state.from]?.name ?? '지구') + ' → B612');
-    copy('stage-title', flying ? (approaching ? 'B612 접근' : 'B612 순항') : inspecting ? 'B612 장미 관측' : 'B612 근접 관측');
-    copy('stage-description', orbiting ? '《어린 왕자》의 소행성' : '');
-    copy('metric-label', '목적지 거리');
-    copy('metric', '거리 미상');
-    copy('metric-note', '가상 항로 · B612');
-    copy('flight-target-name', 'B612');
+    renderNodes([t('b612.cruise'), t('b612.approach'), t('b612.observationNode')], flying ? Number(approaching) : 2);
+    copy('stage-context', inspecting ? t('b612.roseContext') : t('flight.route', { origin: destinations[state.from]?.name ?? t('common.earth'), destination: destinations.b612.name }));
+    copy('stage-title', flying ? (approaching ? t('b612.approach') : t('b612.cruise')) : inspecting ? t('b612.roseTitle') : t('b612.observationTitle'));
+    copy('stage-description', orbiting ? t('b612.observationDescription') : '');
+    copy('metric-label', t('b612.distanceLabel'));
+    copy('metric', t('b612.distanceUnknown'));
+    copy('metric-note', t('b612.distanceNote'));
+    copy('flight-target-name', destinations.b612.name);
     const message = flying
-      ? (reduced.matches ? '정지 화면으로 비행 구간을 살펴보세요.' : state.paused ? '현재 위치에서 비행을 멈췄습니다.' : '관측창 너머로 B612가 가까워집니다.')
-      : orbiting ? (state.observation.sproutRemoved ? '바오밥 싹을 뽑았습니다. 소행성을 돌며 장미를 찾아보세요.' : '소행성을 돌며 바오밥 싹을 찾으세요. 그 뒤 장미를 돌보러 갑니다.')
-        : state.covered ? '장미를 유리 덮개로 보호했습니다.' : state.observation.sproutRemoved ? '' : '궤도로 돌아가 바오밥 싹을 먼저 뽑으세요.';
-    copy('instruction', arrival ? 'B612 관측 시점으로 이동하는 중…'
-      : coverDrop ? '유리 덮개를 내리는 중…'
-      : roseMove ? (orbiting ? '장미에 접근하는 중…' : '이전 관측 위치로 돌아가는 중…') : message);
-    copy('pause-flight', state.paused ? '계속 비행' : '일시정지');
+      ? (reduced.matches ? t('flight.reducedMotion') : state.paused ? t('flight.paused') : '')
+      : orbiting ? (state.observation.sproutRemoved ? t('b612.sproutRemoved') : t('b612.findSprout'))
+        : state.covered ? t('b612.roseProtected') : state.observation.sproutRemoved ? '' : t('b612.sproutRequired');
+    copy('instruction', arrival ? t('b612.arrivalTransition')
+      : coverDrop ? t('b612.loweringCover')
+      : roseMove ? (orbiting ? t('b612.approachingRose') : t('b612.returningToOrbit')) : message);
+    copy('pause-flight', state.paused ? t('flight.resume') : t('common.pause'));
   }
   renderScene();
   if (!journey || failure) window.scrollTo(0, 0);
@@ -395,7 +391,7 @@ function launch() {
   if (state.screen !== 'intro' || activeDialog || failure) return;
   scene.render({ ...state, progress: 1, reduceMotion: reduced.matches });
   transition('flight', { progress: 1, elapsed: 0, paused: false });
-  announce('B612 자동 비행을 시작합니다.');
+  announce(t('b612.flightStarted'));
 }
 
 function scrollToProgress(progress) {
@@ -414,7 +410,7 @@ function goToSection(index) {
 
 function finishRoseMove(destination) {
   transition(destination);
-  if (destination === 'rose') announce('장미를 찾았습니다.');
+  if (destination === 'rose') announce(t('b612.roseFound'));
 }
 
 function finishCover() {
@@ -422,7 +418,7 @@ function finishCover() {
   renderScreen();
   save();
   if (state.sound) audio.coverChime();
-  announce('장미를 유리 덮개로 보호했습니다.');
+  announce(t('b612.roseProtected'));
   $('record').focus({ preventScroll: true });
 }
 
@@ -444,7 +440,7 @@ function pullSprout() {
   renderScreen();
   save();
   if (state.sound) audio.effect();
-  announce('바오밥 싹을 뽑았습니다. 소행성을 돌며 장미를 찾아보세요.');
+  announce(t('b612.sproutRemoved'));
 }
 
 function observe() {
@@ -535,7 +531,7 @@ function bindCanvas(canvas) {
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
     contextLost = true;
-    showError('그래픽 연결이 끊겼습니다. 관측 장면을 다시 불러오세요.');
+    showError('error.contextLost');
   });
   canvas.addEventListener('webglcontextrestored', () => {
     if (contextLost) restoreScene();
@@ -560,42 +556,47 @@ function restoreDialog() {
     return;
   }
   if (state.look) {
-    const notes = {
-      moon: '달 가까이에서 바라본 지구의 대륙과 구름.',
-      solar: '태양계 외곽에서 지구는 작은 점으로 보입니다.',
-      voyager: '보이저 1호 사진을 참고한 연출.'
-    };
+    renderEarthDialog();
     const stellar = state.look === 'stellar';
-    const navigation = state.look === 'nav';
-    const observer = navigation ? earthObserver() : null;
-    const reference = observer?.reference;
-    $('earth-dialog').dataset.view = state.look;
-    $('earth-dialog').toggleAttribute('data-known-distance', Boolean(reference));
-    copy('earth-context', stellar ? 'B612 탐사 이후' : observer ? `${observer.name}에서 지구 돌아보기` : '지구 돌아보기');
-    copy('earth-title', stellar ? '가까운 항성계' : '우리가 떠나온 곳');
-    copy('earth-note', stellar ? '태양계와 가장 가까운 항성계입니다.'
-      : reference ? `${reference.name} 기준 약 ${reference.lightYears}광년. 지구에서 출발한 빛도 여기까지 약 ${reference.lightYears}년이 걸립니다.`
-        : navigation ? '이 관측 위치에서는 지구까지의 직선거리를 정할 수 없습니다. 표식은 지구 방향을 보여줍니다.'
-          : notes[state.look]);
-    const comparisonReference = stellar ? destinations.pandora.reference : reference;
-    copy('earth-distance-analogy', distanceAnalogy(comparisonReference));
-    show('earth-distance-analogy', Boolean(comparisonReference));
-    show('earth-angle', Boolean(reference));
-    show('earth-reference', Boolean(reference));
-    if (reference) {
-      copy('earth-angle', `지구의 겉보기 지름 약 ${earthAngularDiameter(reference.lightYears)}마이크로각초 · 화면의 점은 비교를 위해 확대했습니다.`);
-      const [label, url] = reference.source;
-      copy('earth-reference', label + ' ↗');
-      $('earth-reference').href = url;
-    }
-    show('stellar-distance', stellar);
-    copy('earth-return', state.screen === 'log' ? '기록으로 돌아가기'
-      : ['surface', 'orbit', 'rose'].includes(state.screen) ? '관측으로 돌아가기' : '항로로 돌아가기');
     openDialog('earth-dialog', $(stellar ? 'log-stellar' : state.screen === 'log' ? 'log-earth' : 'look-back'));
     renderScreen();
     sound();
     save();
   }
+}
+
+function renderEarthDialog() {
+  const notes = {
+    moon: t('earthView.moonNote'),
+    solar: t('earthView.solarNote'),
+    voyager: t('earthView.voyagerNote')
+  };
+  const stellar = state.look === 'stellar';
+  const navigation = state.look === 'nav';
+  const observer = navigation ? earthObserver() : null;
+  const reference = observer?.reference;
+  $('earth-dialog').dataset.view = state.look;
+  $('earth-dialog').toggleAttribute('data-known-distance', Boolean(reference));
+  copy('earth-context', stellar ? t('earthView.afterB612') : observer ? t('earthView.fromObserver', { observer: observer.name }) : t('earthView.heading'));
+  copy('earth-title', stellar ? t('earthView.stellarTitle') : t('earthView.title'));
+  copy('earth-note', stellar ? t('earthView.stellarNote')
+    : reference ? t('earthView.lightTime', { name: reference.name, lightYears: reference.lightYears })
+      : navigation ? t('earthView.unknownDistance')
+        : notes[state.look]);
+  const comparisonReference = stellar ? destinations.pandora.reference : reference;
+  copy('earth-distance-analogy', distanceAnalogy(comparisonReference));
+  show('earth-distance-analogy', Boolean(comparisonReference));
+  show('earth-angle', Boolean(reference));
+  show('earth-reference', Boolean(reference));
+  if (reference) {
+    copy('earth-angle', t('earthView.angularSize', { diameter: earthAngularDiameter(reference.lightYears) }));
+    const [label, url] = reference.source;
+    copy('earth-reference', t('common.externalLink', { label }));
+    $('earth-reference').href = url;
+  }
+  show('stellar-distance', stellar);
+  copy('earth-return', state.screen === 'log' ? t('earthView.returnToRecord')
+    : ['surface', 'orbit', 'rose'].includes(state.screen) ? t('earthView.returnToObservation') : t('common.returnToRoute'));
 }
 
 function lookBack() {
@@ -607,11 +608,15 @@ function lookBack() {
   restoreDialog();
 }
 
+function renderConfirmation() {
+  copy('confirm-title', t(confirmation.title));
+  copy('confirm-copy', t(confirmation.description));
+  copy('confirm-action', t(confirmation.label));
+}
+
 function confirm(title, description, label, trigger, action) {
-  copy('confirm-title', title);
-  copy('confirm-copy', description);
-  copy('confirm-action', label);
-  confirmAction = action;
+  confirmation = { title, description, label, action };
+  renderConfirmation();
   openDialog('confirm-dialog', trigger);
 }
 
@@ -633,8 +638,8 @@ function finishDialog(dialog) {
     save();
   }
   if (dialog.id === 'confirm-dialog') {
-    const action = confirmAction;
-    confirmAction = undefined;
+    const action = confirmation?.action;
+    confirmation = undefined;
     if (dialog.returnValue === 'confirm') {
       action?.();
       return;
@@ -657,8 +662,9 @@ for (const dialog of document.querySelectorAll('dialog')) {
   dialog.addEventListener('close', () => finishDialog(dialog));
 }
 
-function showError(message) {
+function showError(key) {
   failure = true;
+  errorKey = key;
   booting = false;
   lastTime = 0;
   save();
@@ -666,7 +672,7 @@ function showError(message) {
   document.body.dataset.error = 'true';
   show('error', true);
   show('error-back', ['intro', 'flight', 'orbit', 'rose', 'launchpad', 'route-flight', 'surface'].includes(state.screen));
-  copy('error-copy', message);
+  copy('error-copy', t(errorKey));
   $('retry').focus({ preventScroll: true });
 }
 
@@ -690,7 +696,7 @@ async function restoreScene() {
     sound();
   } catch (error) {
     console.error(error);
-    showError('WebGL 또는 장면 파일을 불러오지 못했습니다. 출처와 축척은 상단에서 읽을 수 있습니다.');
+    showError('error.sceneLoad');
   }
 }
 
@@ -709,7 +715,7 @@ $('resume').addEventListener('click', () => {
   restoreDialog();
 });
 $('new-journey').addEventListener('click', event => {
-  confirm('새 여정을 시작할까요?', '저장한 탐사 위치와 기록을 지우고 소리 선택 화면으로 돌아갑니다.', '새 여정', event.currentTarget, () => {
+  confirm('confirm.newTitle', 'confirm.newDescription', 'welcome.newJourney', event.currentTarget, () => {
     saved = undefined;
     corrupt = false;
     try { localStorage.removeItem(key); } catch { show('save-warning', true); }
@@ -749,7 +755,7 @@ $('step-flight').addEventListener('click', () => {
     state.elapsed = 5000;
     renderScreen();
     save();
-    announce('B612 접근');
+    announce(t('b612.approach'));
   } else transition('orbit');
 });
 $('pull-sprout').addEventListener('click', pullSprout);
@@ -784,8 +790,8 @@ $('log-stellar').addEventListener('click', () => {
   restoreDialog();
 });
 $('abort').addEventListener('click', event => {
-  confirm('탐사를 중단할까요?', state.from ? '지금 항로의 출항 대기로 돌아갑니다.' : 'B612 출항 직전 위치로 돌아갑니다.',
-    '탐사 중단', event.currentTarget, returnToLaunch);
+  confirm('confirm.abortTitle', state.from ? 'confirm.abortRoute' : 'confirm.abortB612',
+    'common.abort', event.currentTarget, returnToLaunch);
 });
 $('confirm-action').addEventListener('click', () => closeDialog($('confirm-dialog'), 'confirm'));
 $('retry').addEventListener('click', () => {
@@ -914,7 +920,7 @@ function setOptics(mode) {
   save();
   if (mode === 'tracked') {
     if (state.sound) audio.effect();
-    announce('페트로바 선을 따라 아드리안에 접근합니다.');
+    announce(t('flight.trackingPetrova'));
     $(reduced.matches ? 'step-flight' : 'stage-title').focus({ preventScroll: true });
   } else announce($('instruction').textContent);
 }
@@ -931,7 +937,7 @@ function prepareRoute(id) {
     if (routeLoad !== load) return;
     load.failed = true;
     console.error(error);
-    showError('목적지 관측 장면을 불러올 수 없습니다.');
+    showError('error.destinationLoad');
   });
 }
 
@@ -962,14 +968,14 @@ function depart() {
   if (state.screen !== 'launchpad' || activeDialog || failure) return;
   if (!routeLoad) prepareRoute(state.destination);
   transition('route-flight', { elapsed: 0, paused: false });
-  announce($('stage-context').textContent + ' · 자동 비행 시작');
+  announce(t('flight.started', { route: $('stage-context').textContent }));
 }
 
 function finishArrival(incoming) {
   const { screen, ...changes } = incoming;
   motionTime = 0;
   transition(screen, changes);
-  announce(destinations[state.destination].name + '에 도착했습니다.');
+  announce(t('flight.reachedDestination', { destination: destinations[state.destination].name }));
 }
 
 function beginArrival() {
@@ -1105,17 +1111,17 @@ function observeDestination(action, value) {
       if (action === 'lower' && data.phase === 'ready') {
         data.phase = 'sampling';
         data.elapsed = 0;
-        announce('채취 고도에 도달하는 중');
+        announce(t('adrian.reachingAltitude'));
         focus = 'stage-title';
       } else if (action === 'sample' && data.phase === 'sample') {
         data.phase = 'magnify';
         focus = 'magnification';
       } else if (action === 'magnification' && data.phase === 'magnify' && value >= 1 && value <= 4) {
         data.magnification = value;
-        if (value >= 3 && !data.complete) {
+        if (value >= adrianObservationMagnification && !data.complete) {
           data.firstMagnification = value;
           data.complete = true;
-          announce('미생물 형상 관찰');
+          announce(t('adrian.organisms'));
         }
       } else return;
       break;
@@ -1124,25 +1130,25 @@ function observeDestination(action, value) {
         if (data.phase === 'ready') data.phase = 'echo';
         data.echoElapsed = 0;
         if (state.sound) audio.sonar();
-        announce('음파를 보냈습니다.');
+        announce(t('erid.echoSent'));
       } else if (action === 'replay-erid' && data.phase === 'reply') {
         if (state.sound) audio.eridTones(eridSignal);
-        announce('수신 신호 · 낮은음, 높은음, 중간음');
+        announce(t('erid.receivedAnnouncement'));
       } else if (data.phase === 'reply' && /^tone-[012]$/.test(action)) {
         const tone = Number(action.at(-1));
         if (state.sound) audio.eridTones([tone]);
         if (tone !== eridSignal[data.reply.length]) {
           data.reply = '';
-          announce('신호가 다릅니다. 첫 음부터 다시 답하세요.');
+          announce(t('erid.wrongReply'));
         } else {
           data.reply += tone;
           if (data.reply.length === eridSignal.length) {
             data.phase = 'contact';
             data.complete = true;
             if (state.sound) audio.eridTones(eridSignal, .26);
-            announce('교신 성공. 같은 세 음이 다시 돌아왔습니다.');
+            announce(t('erid.contactAnnouncement'));
             focus = 'surface-record';
-          } else announce(`응답 ${data.reply.length} / ${eridSignal.length}`);
+          } else announce(t('erid.replyAnnouncement', { count: data.reply.length, total: eridSignal.length }));
         }
       } else return;
       break;
@@ -1150,21 +1156,21 @@ function observeDestination(action, value) {
       const step = desertStep(data);
       if (action === 'suit' && !data.path && !data.suitChecked) {
         data.suitChecked = true;
-        announce('스틸수트 점검 완료. 이동할 경로를 고르세요.');
+        announce(t('arrakis.suitCheckedAnnouncement'));
         focus = 'desert-sun';
       } else if (data.suitChecked && Object.hasOwn(desertRoutes, action) && !data.path) {
         data.path = action;
         data.elapsed = 0;
-        announce(desertRoutes[action].name + ' · 이동 시작');
+        announce(t('arrakis.crossingStarted', { route: desertRoutes[action].name }));
         focus = 'stage-title';
       } else if (action === 'desert-survey' && step === 'lookout') {
         data.desertSurvey = 0;
-        announce(desertRoutes[data.path].title + ' · 관측 중');
+        announce(t('arrakis.surveying', { title: desertRoutes[data.path].title }));
         focus = 'stage-title';
       } else if (action === 'desert-water' && step === 'arrived') {
         data.complete = true;
         const { left } = waterReport(desertRoutes[data.path], 1, data.suitChecked);
-        announce(`도착 잔량 ${left}mL`);
+        announce(t('arrakis.arrivalWater', { volume: t('common.milliliters', { amount: left }) }));
         focus = 'surface-record';
       } else return;
       break;
@@ -1174,7 +1180,7 @@ function observeDestination(action, value) {
       data.complete = true;
       const { local, earth } = millerTimes(data.elapsed);
       saveObservation(id);
-      announce(`현지 체류 ${local} · 지구 경과 ${earth}`);
+      announce(t('miller.clocks', { local, earth }));
       return;
     }
     case 'tatooine': {
@@ -1267,7 +1273,7 @@ $('transmit').addEventListener('click', () => {
   state.communication ??= 0;
   state.communicationOpen = true;
   restoreDialog();
-  copy('transmit', '통신 기록 보기');
+  copy('transmit', t('communication.history'));
 });
 
 function tickExpedition(now, viewpointChanged) {
@@ -1286,7 +1292,7 @@ function tickExpedition(now, viewpointChanged) {
       state.communication = Math.min(8000, state.communication + delta);
       ui.renderCommunication(state.communication);
       if (Math.floor(state.communication / 4000) > step) {
-        announce(step ? '지구에서 답장 수신 · 발신 후 약 8.7년' : '판도라 방향에 신호 도착 · 약 4.4년');
+        announce(t(step ? 'communication.replyAnnouncement' : 'communication.arrivalAnnouncement'));
         if (state.sound) audio.effect();
       }
       throttledSave();
@@ -1441,12 +1447,26 @@ function tick(now) {
   }
   if (before < 5000 && state.elapsed >= 5000) {
     renderScreen();
-    announce('B612 접근');
+    announce(t('b612.approach'));
   } else renderScene();
   throttledSave();
 }
 
+function localizeScreen() {
+  document.documentElement.lang = getLocale();
+  localizeDom(document);
+  ui.localize();
+  previousNodes = '';
+  copy('status', '');
+  renderScreen();
+  if (state.look) renderEarthDialog();
+  if (confirmation) renderConfirmation();
+  if (failure && errorKey) copy('error-copy', t(errorKey));
+}
+
 history.scrollRestoration = 'manual';
 readSaved();
+onLocaleChange(localizeScreen);
+localizeScreen();
 restoreScene();
 requestAnimationFrame(tick);

@@ -6,7 +6,7 @@ import { createEridScene } from './erid-scene.js';
 import { createRouteScene } from './routes-scene.js';
 import { createTatooineOrbit } from './tatooine-orbit-scene.js';
 import { groundSkyAt } from './tatooine-orbit.js';
-import { createSpatialTitle, placeSpatialTitle, projectAnchor } from './spatial-title.js';
+import { createSpatialTitle, placeSpatialTitle, projectAnchor, updateSpatialTitle } from './spatial-title.js';
 
 const { clamp, lerp, smoothstep, degToRad } = THREE.MathUtils;
 const vec = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -123,7 +123,7 @@ function pandoraOrbitalView() {
   mother.scale.setScalar(pandoraScale.primaryDiameter * lengthScale / 2);
   mother.rotation.z = -.19;
   scene.add(mother);
-  const bodies = [{ name: '판도라', position: planet.position }, { name: '폴리페무스', position: mother.position }];
+  const bodies = [{ labelKey: 'world.pandora.name', position: planet.position }, { labelKey: 'pandora.polyphemus', position: mother.position }];
   const points = [center, vec(orbitRadius, 0, 0)];
   const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),
     new THREE.LineBasicMaterial({ color: 0x6eb1ba, opacity: .44, transparent: true }));
@@ -153,8 +153,8 @@ function pandoraOrbitalView() {
       planet.material.color.set(compare ? 0xd9cbbb : 0x62c6b1);
       mother.material.uniforms.shadow.value.set(compare ? 0x18306c : 0x97816f);
       mother.material.uniforms.highlight.value.set(compare ? 0x7da0ee : 0xe8cdb0);
-      bodies[0].name = compare ? '트리톤' : '판도라';
-      bodies[1].name = compare ? '해왕성' : '폴리페무스';
+      bodies[0].labelKey = compare ? 'pandora.triton' : 'world.pandora.name';
+      bodies[1].labelKey = compare ? 'pandora.neptune' : 'pandora.polyphemus';
       distanceLine.rotation.y = -orbitAngle;
       const zoom = data?.orbitZoom ?? 1;
       const follow = 1 - 1 / zoom;
@@ -710,6 +710,7 @@ export function createExpeditionScenes(renderer, viewportCamera, asteroidTemplat
     const isMoving = id === 'arrakis' && Boolean(data.path);
     const specialView = isMoving || data.viewProgress > 0 || (id === 'pandora' && data.lookPitch > .27) || (id === 'adrian' && data.phase === 'magnify');
     surface.title.visible = observing && !specialView && hasWideView;
+    if (surface.title.visible) updateSpatialTitle(surface.title, destinations[id].name);
     if (surface.title.visible && surface.titleAspect !== camera.aspect) {
       placeSpatialTitle(surface.title, camera, 9.4, -.66, .50, .30);
       surface.titleAspect = camera.aspect;

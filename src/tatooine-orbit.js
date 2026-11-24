@@ -7,9 +7,9 @@ export const outerOrbit = { axis: .7048, eccentricity: .00685, period: 228.776, 
 export const orbitRates = [1, 5, 10];
 export const defaultOrbitRate = 5;
 export const tatooineBodies = {
-  primary: { name: '첫 번째 해', radiusKm: .6489 * 695_700, mass: .6897 },
-  secondary: { name: '두 번째 해', radiusKm: .22623 * 695_700, mass: .20255 },
-  planet: { name: '타투인', radiusKm: 6_371 }
+  primary: { labelKey: 'tatooine.primarySun', radiusKm: .6489 * 695_700, mass: .6897 },
+  secondary: { labelKey: 'tatooine.secondarySun', radiusKm: .22623 * 695_700, mass: .20255 },
+  planet: { labelKey: 'world.tatooine.name', radiusKm: 6_371 }
 };
 
 const totalMass = tatooineBodies.primary.mass + tatooineBodies.secondary.mass;

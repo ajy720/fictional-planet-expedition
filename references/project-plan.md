@@ -57,7 +57,7 @@ Network Media 기말 프로젝트 기획안 · 20211549 안현석
 
 실재하는 항성까지의 관측 거리는 화면에 항성명과 함께 표시한다. 거리가 알려지지 않은 목적지에는 거리 미상을 표시하고 가상 항로로 들어간다. [NASA 《프로젝트 헤일메리》 해설](https://science.nasa.gov/the-science-behind-project-hail-mary/) · [NASA 근방 항성 거리 자료](https://spacemath.gsfc.nasa.gov/stars/5Page29.pdf) · [《듄》 원작 부록](https://duneworld.org/books/terms1.html) · [킵 손의 《인터스텔라》 해설](https://www.its.caltech.edu/~kip/index.html/PubScans/VI-59.pdf) · [《어린 왕자》 공식 사이트](https://www.lepetitprince.com/en/new-products-from-our-licensees/cutebee-unveils-two-book-nooks-inspired-by-the-little-prince/) · [스타워즈 공식 타투인 설정](https://www.starwars.com/databank/Tatooine)
 
-탐사 기록에는 작품에서 재현한 관찰과 현실의 비교 근거를 함께 읽을 수 있게 한다. 아드리안의 미생물 형상에는 `작품을 바탕으로 재현한 샘플`을 표시한다. 타투인에서는 두 해와 그림자를 관찰한 뒤 두 별을 공전하는 가스 행성 케플러-16b를 소개한다. [NASA 베누 자료](https://science.nasa.gov/solar-system/asteroids/101955-bennu/facts/) · [NASA 케플러-16b 자료](https://science.nasa.gov/exoplanets/other-stars-other-worlds/kepler-16-b-almost-a-real-life-tatooine/)
+탐사 기록에는 작품에서 재현한 관찰과 현실의 비교 근거를 함께 읽을 수 있게 한다. 타투인에서는 두 해와 그림자를 관찰한 뒤 두 별을 공전하는 가스 행성 케플러-16b를 소개한다. [NASA 베누 자료](https://science.nasa.gov/solar-system/asteroids/101955-bennu/facts/) · [NASA 케플러-16b 자료](https://science.nasa.gov/exoplanets/other-stars-other-worlds/kepler-16-b-almost-a-real-life-tatooine/)
 
 참고 · 박서연, 〈지구 밖 여행 안내 — 여행지: 작품 속 천체들〉, 11월 11일 우주탐구회 공개세미나 발표자료 및 대본.
 

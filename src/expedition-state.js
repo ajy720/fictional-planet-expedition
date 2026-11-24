@@ -1,9 +1,10 @@
 import { desertRoutes, destinationIds, flightDuration, petrovaCheckpoint } from './destinations.js';
 import { echoDuration } from './erid-sonar.js';
-import { desertSurveyDuration, newObservation } from './observations.js';
+import { desertSurveyDuration, newObservation, restoreRecordEntries, validRecordEntry } from './observations.js';
 import { defaultOrbitRate, orbitRates, outerOrbit } from './tatooine-orbit.js';
 
-export const saveVersion = 4;
+const experienceSaveVersion = 4;
+export const saveVersion = 5;
 
 export const newExpedition = () => ({
   records: {}, order: [], current: null, destination: 'b612', from: null,
@@ -39,13 +40,13 @@ export function restoreExpedition(data) {
       || (data.look === 'stellar' && data.screen !== 'log')) return null;
     const voyage = newExpedition();
     if (data.screen === 'log') {
-      voyage.records.b612 = { lines: [], view: {} };
+      voyage.records.b612 = { entries: [], view: {} };
       voyage.order.push('b612');
       voyage.current = 'b612';
     }
     return { ...data, ...voyage, version: saveVersion };
   }
-  if (![2, 3, saveVersion].includes(data.version) || !isDestination(data.destination) || !isDestination(data.recordView)
+  if (![2, 3, experienceSaveVersion, saveVersion].includes(data.version) || !isDestination(data.destination) || !isDestination(data.recordView)
     || ![null, 'directory', 'archive'].includes(data.recordBack) || !['log', 'archive'].includes(data.directoryBack)
     || ![null, ...destinationIds].includes(data.from) || ![null, ...destinationIds].includes(data.current)
     || !between(data.launchProgress, 0, 1) || !between(data.endingProgress, 0, 1)
@@ -61,7 +62,9 @@ export function restoreExpedition(data) {
   if (!data.order.every(id => {
     if (!isDestination(id)) return false;
     const record = data.records[id];
-    if (!Array.isArray(record?.lines) || !record.lines.every(line => typeof line === 'string')) return false;
+    if (data.version === saveVersion) {
+      if (!Array.isArray(record?.entries) || !record.entries.every(entry => validRecordEntry(id, entry))) return false;
+    } else if (!Array.isArray(record?.lines) || !record.lines.every(line => typeof line === 'string')) return false;
     if (id === 'arrakis' && (!record.paths || !Object.keys(record.paths).every(path => Object.hasOwn(desertRoutes, path))
       || !Object.hasOwn(record.paths, record.latestPath)
       || !Object.values(record.paths).every(value => value && between(value.spent, 0, 100)
@@ -85,7 +88,7 @@ export function restoreExpedition(data) {
     if (elapsed > duration) return null;
   } else if (data.screen === 'flight' && elapsed > 8000) return null;
   if (!validObservation(data.observation, data.version)) return null;
-  const legacy = data.version < saveVersion;
+  const legacy = data.version < experienceSaveVersion;
   let observation = legacy ? upgradeObservation(data.destination, data.observation) : data.observation;
   if (data.destination === 'erid' && observation.phase === 'echo' && observation.echoElapsed == null) {
     // Older saves only track the outgoing ring. Restart that in-flight scan with the new round trip.
@@ -113,9 +116,12 @@ export function restoreExpedition(data) {
   if (data.screen === 'route-flight' && data.destination === 'adrian' && observation.optics !== 'tracked') {
     elapsed = Math.min(elapsed, petrovaCheckpoint(data.from));
   }
-  const records = legacy ? Object.fromEntries(Object.entries(data.records).map(([id, record]) => [
-    id, { ...record, view: upgradeObservation(id, record.view ?? {}) }
-  ])) : data.records;
+  const records = data.version === saveVersion ? data.records : Object.fromEntries(
+    Object.entries(data.records).map(([id, { lines, ...record }]) => {
+      const view = legacy ? upgradeObservation(id, record.view ?? {}) : record.view ?? {};
+      return [id, { ...record, view, entries: restoreRecordEntries(id, view, lines) }];
+    })
+  );
   return { ...data, version: saveVersion, records, observation, elapsed,
     mapSelection: isDestination(data.mapSelection) ? data.mapSelection : null };
 }
@@ -138,7 +144,7 @@ function validObservation(data, version) {
     && (data.echoElapsed == null || between(data.echoElapsed, 0, echoDuration))
     && validPhoto(data.desertPhoto)
     && between(data.sky, 0, 100) && [0, 1, 2, 3].includes(data.visited)
-    && (version < saveVersion || validExperience(data)));
+    && (version < experienceSaveVersion || validExperience(data)));
 }
 
 function validExperience(data) {

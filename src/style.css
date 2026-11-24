@@ -132,7 +132,7 @@ button:disabled { opacity: .55; cursor: default; }
 .directory-entry .distance-analogy { display: block; margin-top: 3px; }
 .log-entry .distance-analogy, .map-world-details .distance-analogy { margin-top: 6px; }
 .eyebrow { display: flex; align-items: center; gap: .55em; margin: 0; color: var(--accent); font: 550 .8125rem/1.5 var(--mono); letter-spacing: .06em; }
-.eyebrow > span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .telemetry {
   position: absolute; inset: clamp(94px, 15vh, 135px) auto auto var(--edge);
   max-width: min(360px, 39vw); text-shadow: var(--shadow);
@@ -298,7 +298,7 @@ body:not([data-screen="surface"]) :is(.desert-binoculars, .desert-water-reading)
 .twin-clock { display: flex; flex-wrap: wrap; gap: 5px 25px; }
 .twin-clock > span { display: grid; color: var(--muted); font-size: .8125rem; }
 .twin-clock strong { color: var(--ink); font: 550 clamp(1.22rem, 2.2vw, 2rem)/1.25 var(--mono); }
-.twin-clock span + span strong { color: var(--accent); }
+.twin-clock > span + span strong { color: var(--accent); }
 .range-label {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   font-size: .875rem; color: var(--ink); text-shadow: var(--shadow);
