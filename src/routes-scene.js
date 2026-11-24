@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { t as translate } from './copy/index.js';
 import { glow, randomSequence } from './models.js';
 import { destinationIds, destinations, petrovaCheckpoint, routeLayout, routeFlight } from './destinations.js';
+import { createSpatialTitle, updateSpatialTitle } from './spatial-title.js';
 
 const { clamp, lerp, smoothstep } = THREE.MathUtils;
 const vec = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -29,6 +31,8 @@ const flightRadius = { ...chartRadius, b612: .27 };
 const closeRange = id => flightRadius[id] * (3.7 + .25 / chartRadius[id]);
 const overviewTarget = vec(-1.2, .7, -1.5);
 const viewUp = vec(0, 1, 0);
+const portraitUp = vec(.39, .92, 0).normalize();
+const worldName = id => id === 'earth' ? translate('common.earth') : destinations[id].name;
 
 export const departureStops = [0, .33, .67, 1];
 export const departureStage = progress => progress >= .67 ? 2 : progress >= .33 ? 1 : 0;
@@ -70,6 +74,8 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
   }
   destinationIds.forEach((id, index) => putPlanet(id, id === 'b612' ? asteroidTemplate.terrain.clone() : globe(destinations[id].color, index)));
   putPlanet('earth', earthTemplate.clone());
+  const titles = Object.fromEntries(ids.map(id => [id, createSpatialTitle(worldName(id))]));
+  scene.add(...Object.values(titles));
 
   const mother = globe(0xad886f, 7);
   const motherChartOffset = vec(-3, 1.25, -3.4);
@@ -213,6 +219,7 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
   const layoutOffset = new THREE.Vector3();
   const mapAim = new THREE.Vector3();
   const mapFocus = new THREE.Vector3();
+  const cameraSpace = new THREE.Vector3();
   let track;
 
   function positionWorlds(eye, scale, map) {
@@ -237,6 +244,56 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
   function nearEye(id) {
     const radius = flightRadius[id];
     return worlds[id].clone().add(vec(radius * .2, radius * .17, closeRange(id)));
+  }
+
+  function positionTitles(view, map, departure, progress) {
+    const narrow = camera.aspect < 1.15;
+    const portraitMap = map && narrow;
+    const up = portraitMap ? portraitUp : viewUp;
+    const reveal = smoothstep(progress, .26, .39);
+    const fade = 1 - smoothstep(progress, .77, .99);
+    const targetFade = 1 - smoothstep(progress, .76, .89);
+    const baseHeight = 1.55 * clamp(1.12 / camera.aspect, 1, 2.65);
+    const { clientWidth, clientHeight } = renderer.domElement;
+    const focalLength = clientHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    for (const id of ids) {
+      const title = titles[id];
+      title.visible = false;
+      if (!map && !departure) continue;
+
+      const { x, y, radius, visible } = projectPoint(id);
+      const opacity = map ? 1 : reveal * (id === view.destination ? targetFade : fade) *
+        smoothstep(radius, .32, 1.45) * smoothstep(Math.min(x, 100 - x), 2.5, 8) *
+        smoothstep(Math.min(y, 100 - y), 9, 17);
+      if (!visible || opacity <= .01) continue;
+
+      updateSpatialTitle(title, worldName(id));
+      const planet = planets[id];
+      const planetRadius = planet.scale.y;
+      const unitsPerPixel = -cameraSpace.copy(planet.position).applyMatrix4(camera.matrixWorldInverse).z / focalLength;
+      const height = clamp(baseHeight, (narrow ? 20 : 27) * unitsPerPixel, (narrow ? 44 : 80) * unitsPerPixel);
+      const halfWidth = title.geometry.parameters.width * height / 2;
+      const reach = (planetRadius * .73 + 2 * halfWidth + .25) / unitsPerPixel + 8;
+      const roomLeft = x * clientWidth / 100;
+      const left = roomLeft >= reach && (id === 'b612' || clientWidth - roomLeft < reach);
+      const vertical = narrow && id === 'adrian' ? -1 : 1;
+      title.position.copy(planet.position)
+        .addScaledVector(up, vertical * (planetRadius * (narrow ? 1 : .66) + height * .54 + .27));
+      if (!narrow) {
+        title.position.x += (left ? -1 : 1) * (planetRadius * .73 + halfWidth + .25);
+        if (left && id === 'tatooine') title.position.y += planetRadius + height * .4;
+      } else {
+        if (id === 'adrian') title.position.addScaledVector(up, -height * .36);
+        if (id === 'earth') title.position.addScaledVector(up, height * .26);
+        if (id === 'pandora') title.position.x += height * .42;
+      }
+      title.position.z += planetRadius * .27;
+      title.rotation.set(0, -.19, portraitMap ? -.31 : .075, 'ZYX');
+      title.scale.setScalar(height);
+      title.material.opacity = opacity;
+      title.material.color.setHex(departure && (id === view.from || id === view.destination) ? 0xffe0c4 : 0xffffff);
+      title.visible = true;
+    }
   }
 
   function render(view, aspect) {
@@ -265,7 +322,7 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
       camera.position.copy(eye).add(mapFocus);
       camera.position.x += view.parallax.x * 1.6;
       camera.position.y -= view.parallax.y * 1.1;
-      if (aspect < 1.15) camera.up.set(.39, .92, 0);
+      if (aspect < 1.15) camera.up.copy(portraitUp);
       camera.lookAt(mapAim);
     } else if (departure) {
       const start = nearEye(view.from);
@@ -287,6 +344,7 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
       camera.lookAt(camera.position.clone().add(aim));
     }
     camera.updateMatrixWorld();
+    positionTitles(view, map, departure, p);
     track = target && {
       ...projectPoint(view.destination),
       trackingOpacity: departure ? smoothstep(p, .855, .99) : 1
@@ -337,5 +395,30 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
     };
   }
 
-  return { render, project: () => ids.map(projectPoint), target: () => track, petrovaSignal: () => signalPoint };
+  const labelCorner = new THREE.Vector3();
+  const labelBounds = new THREE.Box2();
+  function projectMapPoint(id) {
+    const point = projectPoint(id);
+    if (!point.visible) return point;
+
+    const title = titles[id];
+    const halfWidth = title.geometry.parameters.width / 2;
+    labelBounds.makeEmpty();
+    for (const x of [-halfWidth, halfWidth]) {
+      for (const y of [-.5, .5]) {
+        labelCorner.set(x, y, 0).applyMatrix4(title.matrixWorld).project(camera);
+        labelBounds.expandByPoint(labelCorner);
+      }
+    }
+    const { clientWidth, clientHeight } = renderer.domElement;
+    const { min, max } = labelBounds;
+    return { ...point, label: {
+      left: (50 * (1 + min.x) - point.x) * clientWidth / 100,
+      top: (50 * (1 - max.y) - point.y) * clientHeight / 100,
+      width: (max.x - min.x) * clientWidth / 2,
+      height: (max.y - min.y) * clientHeight / 2
+    } };
+  }
+
+  return { render, project: () => ids.map(projectMapPoint), target: () => track, petrovaSignal: () => signalPoint };
 }

@@ -46,6 +46,9 @@ const approachDuration = 520;
 const endingDuration = 6000;
 const parallax = { x: 0, y: 0 };
 const pointerAim = { x: 0, y: 0 };
+const hudAim = { x: 0, y: 0 };
+const hudOffset = { x: 0, y: 0 };
+let hudFrameTime = 0;
 let pointer;
 let confirmation;
 let activeDialog;
@@ -131,16 +134,7 @@ function renderScene() {
     earthReference: state.look === 'nav' ? earthObserver()?.reference : null,
     coverOffset: coverDrop?.offset, motionTime, parallax, mapMotion, reduceMotion: reduced.matches
   });
-  const map = state.screen === 'directory';
-  if (scene && (map || state.screen === 'launchpad')) {
-    ui.positionRouteMarkers(scene.routePoints(), map, state.launchProgress, state.from, map ? state.mapSelection : state.destination);
-  }
-  const welcomeEarth = state.screen === 'start' ? scene?.welcomeEarth() : null;
-  show('welcome-earth', Boolean(welcomeEarth));
-  if (welcomeEarth) {
-    $('welcome-earth').style.left = welcomeEarth.x + 'px';
-    $('welcome-earth').style.top = welcomeEarth.y + 'px';
-  }
+  if (scene && state.screen === 'directory') ui.positionMapMarkers(scene.routePoints(), state.mapSelection);
   scene?.canvas.classList.toggle('sky-look', canLookAroundPandora());
   const signals = state.screen === 'surface' && !state.look ? scene?.surfaceSignals() : null;
   if (state.screen === 'surface') ui.positionSurface(signals);
@@ -235,7 +229,6 @@ function renderScreen() {
   copy('metric-distance-analogy', distanceAnalogy(reference));
   show('metric-distance-analogy', Boolean(reference));
   show('departure-actions', departure);
-  show('departure-markers', departure);
   show('surface-actions', surface);
   show('observation-readout', surface);
   if (!surface) {
@@ -366,6 +359,7 @@ function transition(screen, changes = {}) {
   arrival = roseMove = coverDrop = mapMotion = undefined;
   arrivalLayer.hidden = true;
   pointerAim.x = pointerAim.y = parallax.x = parallax.y = 0;
+  centerHud();
   state = { ...state, ...changes, screen };
   lastTime = 0;
   updateScrollArea();
@@ -540,6 +534,7 @@ function bindCanvas(canvas) {
 
 function openDialog(id, trigger) {
   if (activeDialog) return;
+  centerHud();
   activeDialog = $(id);
   dialogTrigger = trigger;
   lastTime = 0;
@@ -685,7 +680,7 @@ async function restoreScene() {
   renderScreen();
   try {
     if (!scene) {
-      scene = await createScene($('scene'), $('scene-labels'), $('look-labels'));
+      scene = await createScene($('scene'));
       bindCanvas(scene.canvas);
     }
     scene.resize();
@@ -889,14 +884,18 @@ window.addEventListener('resize', () => {
 });
 reduced.addEventListener('change', () => {
   lastTime = 0;
+  centerHud();
   renderScreen();
 });
 window.addEventListener('pagehide', save);
-window.addEventListener('blur', () => { lastTime = 0; save(); });
+window.addEventListener('blur', () => { lastTime = 0; centerHud(); save(); });
 window.addEventListener('focus', () => { lastTime = 0; });
 document.addEventListener('visibilitychange', () => {
   lastTime = 0;
-  if (document.hidden) save();
+  if (document.hidden) {
+    centerHud();
+    save();
+  }
   sound();
 });
 
@@ -1378,15 +1377,46 @@ function tickExpedition(now, viewpointChanged) {
 }
 
 const parallaxScreens = new Set(['start', 'surface', 'directory']);
+function centerHud() {
+  hudAim.x = hudAim.y = 0;
+}
+
 window.addEventListener('pointermove', event => {
-  if (event.pointerType !== 'mouse' || !parallaxScreens.has(state.screen) ||
-      reduced.matches || activeDialog || event.target.closest?.('button, a, input')) return;
-  pointerAim.x = event.clientX / window.innerWidth * 2 - 1;
-  pointerAim.y = event.clientY / window.innerHeight * 2 - 1;
+  if (event.pointerType !== 'mouse' || reduced.matches || activeDialog || failure) return;
+  if (event.buttons || event.target.closest?.('button, a, input, select, textarea')) {
+    hudAim.x = hudOffset.x;
+    hudAim.y = hudOffset.y;
+    return;
+  }
+  hudAim.x = Math.max(-1, Math.min(1, event.clientX / window.innerWidth * 2 - 1));
+  hudAim.y = Math.max(-1, Math.min(1, event.clientY / window.innerHeight * 2 - 1));
+  if (parallaxScreens.has(state.screen)) {
+    pointerAim.x = hudAim.x;
+    pointerAim.y = hudAim.y;
+  }
 }, { passive: true });
 window.addEventListener('pointerout', event => {
-  if (!event.relatedTarget) pointerAim.x = pointerAim.y = 0;
+  if (event.pointerType === 'mouse' && !event.relatedTarget) {
+    pointerAim.x = pointerAim.y = 0;
+    centerHud();
+  }
 });
+
+function updateHud(now) {
+  const delta = hudFrameTime ? Math.min(now - hudFrameTime, 48) : 16;
+  hudFrameTime = now;
+  const still = reduced.matches || failure;
+  const x = still ? 0 : hudAim.x;
+  const y = still ? 0 : hudAim.y;
+  if (x === hudOffset.x && y === hudOffset.y) return;
+
+  const damp = 1 - Math.exp(-delta / 85);
+  hudOffset.x = still || Math.abs(x - hudOffset.x) < .004 ? x : hudOffset.x + (x - hudOffset.x) * damp;
+  hudOffset.y = still || Math.abs(y - hudOffset.y) < .004 ? y : hudOffset.y + (y - hudOffset.y) * damp;
+  const style = document.documentElement.style;
+  style.setProperty('--hud-pointer-x', hudOffset.x.toFixed(3));
+  style.setProperty('--hud-pointer-y', hudOffset.y.toFixed(3));
+}
 
 function updateParallax() {
   if (!scene || !parallaxScreens.has(state.screen) || activeDialog || failure || document.hidden) return false;
@@ -1403,6 +1433,7 @@ function updateParallax() {
 
 function tick(now) {
   requestAnimationFrame(tick);
+  updateHud(now);
   const viewpointChanged = updateParallax();
   if (state.screen === 'directory' && mapMotion && !activeDialog && !failure) {
     const phase = reduced.matches ? 1 : Math.min(1, (now - mapMotion.start) / 460);

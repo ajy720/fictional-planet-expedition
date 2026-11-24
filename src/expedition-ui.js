@@ -6,7 +6,6 @@ import { desertStep, eridTone, eridSignal, firstMillerWave, millerCrestAt, obser
 import { positionCallout } from './spatial-ui.js';
 import { auKm, binaryOrbit, groundSkyAt, orbitPosition, orbitRates, outerOrbit } from './tatooine-orbit.js';
 
-const { smoothstep } = MathUtils;
 const $ = id => document.getElementById(id);
 const show = (id, on) => { $(id).hidden = !on; };
 const copy = (id, text) => { if ($(id).textContent !== text) $(id).textContent = text; };
@@ -475,8 +474,7 @@ export function createExpeditionUI(callbacks) {
   }
 
   const mapMarkers = new Map();
-  const departureMarkers = new Map();
-  const earth = element('span', t('common.earth'), 'map-earth');
+  const earth = element('span', t('common.earth'), 'sr-only');
   $('map-markers').append(earth);
   for (const id of destinationIds) {
     const info = destinations[id];
@@ -484,16 +482,12 @@ export function createExpeditionUI(callbacks) {
     button.type = 'button';
     button.dataset.world = id;
     button.style.setProperty('--world-accent', '#' + info.color.toString(16).padStart(6, '0'));
-    button.append(element('span', '', 'map-reticle'), element('span', info.name, 'map-label'),
-      element('span', '', 'map-label-note'));
+    const hit = element('span', '', 'map-label-hit');
+    hit.setAttribute('aria-hidden', 'true');
+    button.append(element('span', '', 'map-reticle'), element('span', '', 'map-label-note'), hit);
     button.addEventListener('click', event => callbacks.inspect(id, event.detail === 0));
     mapMarkers.set(id, button);
     $('map-markers').append(button);
-  }
-  for (const id of ['earth', ...destinationIds]) {
-    const label = element('span', destinations[id]?.name ?? t('common.earth'), 'departure-marker');
-    departureMarkers.set(id, label);
-    $('departure-markers').append(label);
   }
   $('map-travel').addEventListener('click', () => callbacks.choose());
   $('map-record').addEventListener('click', () => callbacks.readSelected());
@@ -502,8 +496,6 @@ export function createExpeditionUI(callbacks) {
     recordSignature = undefined;
     renderReferences();
     earth.textContent = t('common.earth');
-    for (const [id, marker] of mapMarkers) marker.querySelector('.map-label').textContent = destinations[id].name;
-    for (const [id, marker] of departureMarkers) marker.textContent = destinations[id]?.name ?? t('common.earth');
     if (renderedSurface === 'tatooine') localizeOrbitRates();
   }
 
@@ -517,7 +509,7 @@ export function createExpeditionUI(callbacks) {
       marker.setAttribute('aria-label', joinLabels([destinations[id].name, status].filter(Boolean)));
       marker.dataset.current = String(id === state.current);
       marker.dataset.recommended = String(id === recommendation);
-      marker.lastElementChild.textContent = id === state.current ? t('map.current') : id === recommendation ? t('map.recommended') : '';
+      marker.querySelector('.map-label-note').textContent = id === state.current ? t('map.current') : id === recommendation ? t('map.recommended') : '';
     }
     const id = state.mapSelection;
     const selected = destinations[id];
@@ -539,35 +531,39 @@ export function createExpeditionUI(callbacks) {
     }
   }
 
-  function positionRouteMarkers(points, map, progress, from, to) {
-    const reveal = smoothstep(progress, .26, .39);
-    const chartFade = 1 - smoothstep(progress, .77, .99);
-    const destinationFade = 1 - smoothstep(progress, .76, .89);
-    for (const { id, x, y, radius, visible } of points) {
-      const marker = map ? id === 'earth' ? earth : mapMarkers.get(id) : departureMarkers.get(id);
+  function positionMapMarkers(points, selection) {
+    for (const { id, x, y, radius, visible, label } of points) {
+      const marker = mapMarkers.get(id);
+      if (!marker) continue;
+      marker.hidden = !visible;
+      if (!visible) continue;
       marker.style.left = x + '%';
       marker.style.top = y + '%';
-      if (map) {
-        marker.hidden = !visible;
-        marker.style.setProperty('--planet-radius', Math.max(8, radius) + 'px');
-        continue;
-      }
-
-      const distanceFade = smoothstep(radius, 1.2, 4.5);
-      const edgeFade = smoothstep(Math.min(x, 100 - x), 2.5, 8) *
-        smoothstep(Math.min(y, 100 - y), 9, 17);
-      const opacity = reveal * (id === to ? destinationFade : chartFade) * distanceFade * edgeFade;
-      marker.hidden = !visible || opacity <= 0;
-      marker.style.opacity = String(opacity);
-      marker.style.setProperty('--planet-radius', radius + 'px');
-      marker.style.setProperty('--label-scale', String(.55 + .45 * smoothstep(radius, 1.2, 11)));
-      marker.dataset.active = String(id === from || id === to);
+      marker.style.setProperty('--planet-radius', Math.max(8, radius) + 'px');
+      Object.assign(marker.querySelector('.map-label-hit').style, {
+        left: `calc(50% + ${label.left}px)`, top: `calc(50% + ${label.top}px)`,
+        width: label.width + 'px', height: label.height + 'px'
+      });
     }
-    if (!map || !to) return;
-    const target = points.find(point => point.id === to && point.visible);
+    if (!selection) return;
+    const target = points.find(point => point.id === selection && point.visible);
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const avoid = [$('map-title').parentElement, $('map-back'), $('distance-open')].map(element => element.getBoundingClientRect());
+    for (const { id, x, y, radius, label } of points) {
+      if (!label) continue;
+      const centerX = x * viewportWidth / 100;
+      const centerY = y * viewportHeight / 100;
+      avoid.push({ left: centerX + label.left - 4, top: centerY + label.top - 4,
+        width: label.width + 8, height: label.height + 8 });
+      if (id !== selection) {
+        const extent = radius + 5;
+        avoid.push({ left: centerX - extent, top: centerY - extent, width: 2 * extent, height: 2 * extent });
+      }
+    }
     positionCallout($('map-inspection'), target && {
-      x: target.x * window.innerWidth / 100, y: target.y * window.innerHeight / 100
-    }, { vertical: true, radius: target?.radius });
+      x: target.x * viewportWidth / 100, y: target.y * viewportHeight / 100
+    }, { vertical: true, radius: target?.radius, avoid });
   }
 
   function renderArchive(state) {
@@ -601,5 +597,5 @@ export function createExpeditionUI(callbacks) {
     });
   }
 
-  return { localize, renderSurface, renderOrbitTime, positionSurface, renderRecord, renderMap, renderArchive, positionRouteMarkers, renderCommunication };
+  return { localize, renderSurface, renderOrbitTime, positionSurface, renderRecord, renderMap, renderArchive, positionMapMarkers, renderCommunication };
 }

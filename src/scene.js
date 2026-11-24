@@ -19,7 +19,7 @@ export function adjustOrbit(orbit, x, y, zoom = 1) {
   orbit.radius = math.clamp(orbit.radius * zoom, 1.5, 5.45);
 }
 
-export async function createScene(container, labels, lookLabels) {
+export async function createScene(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -155,8 +155,10 @@ export async function createScene(container, labels, lookLabels) {
   b612Title.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(ORBIT_START, vector(0, 0, 0), vector(0, 1, 0)));
   b612Title.rotateY(-.2);
   scene.add(asteroid.group, b612Title);
+  const captions = new Map();
+  const captionOffset = new THREE.Vector3();
+  const captionView = new THREE.Vector3();
   let firstFlightTarget;
-  let welcomeEarth;
   const streakPositions = new Float32Array(138 * 6);
   const particles = Array.from({ length: 138 }, () => ({
     x: (random() - .5) * 65, y: (random() - .5) * 36, z: random() * 105, size: .12 + random() * 1.5
@@ -200,16 +202,36 @@ export async function createScene(container, labels, lookLabels) {
     camera.lookAt(target);
   }
 
-  function label(text, target, opacity = 1, layer = labels) {
+  function label(key, target, radius, opacity = 1) {
     if (opacity <= .01) return;
-    target.getWorldPosition(projection).project(camera);
+    const center = target.getWorldPosition(markerPosition);
+    projection.copy(center).project(camera);
     if (projection.z < -1 || projection.z > 1 || Math.abs(projection.x) > .93 || Math.abs(projection.y) > .81) return;
-    const caption = document.createElement('span');
-    caption.textContent = text;
-    caption.style.left = (projection.x + 1) * 50 + '%';
-    caption.style.top = (1 - projection.y) * 50 + '%';
-    caption.style.opacity = opacity;
-    layer.append(caption);
+    const text = t(key);
+    if (!captions.has(key)) {
+      const title = createSpatialTitle(text);
+      captions.set(key, title);
+      scene.add(title);
+    }
+    const title = captions.get(key);
+    updateSpatialTitle(title, text);
+
+    const { clientWidth, clientHeight } = renderer.domElement;
+    const depth = -captionView.copy(center).applyMatrix4(camera.matrixWorldInverse).z;
+    const unitsPerPixel = 2 * depth * Math.tan(turn(camera.fov / 2)) / clientHeight;
+    const height = unitsPerPixel * (clientWidth < 680 ? 24 : 32);
+    const halfWidth = title.geometry.parameters.width * height / 2;
+    const reach = radius + 2 * halfWidth + height * .24;
+    const roomRight = (1 - projection.x) * clientWidth * unitsPerPixel / 2;
+    const side = roomRight < reach ? -1 : 1;
+    captionOffset.set(side * (radius + halfWidth + height * .24), radius * .42 + height * .42, radius * .17);
+    title.position.copy(center).add(captionOffset.applyQuaternion(camera.quaternion));
+    title.quaternion.copy(camera.quaternion);
+    title.rotateY(side * -.18);
+    title.rotateZ(.07);
+    title.scale.setScalar(height);
+    title.material.opacity = opacity;
+    title.visible = true;
   }
 
   function setScene(mode) {
@@ -254,8 +276,9 @@ export async function createScene(container, labels, lookLabels) {
     }
   }
 
-  function renderWorld() {
+  function renderWorld(sceneLabels = []) {
     camera.updateMatrixWorld();
+    for (const args of sceneLabels) label(...args);
     background.position.copy(camera.position);
     background.scale.setScalar(Math.max(1, camera.near * 1.5));
     renderer.render(scene, camera);
@@ -278,12 +301,13 @@ export async function createScene(container, labels, lookLabels) {
       terrain.transparent = true;
       terrain.opacity = math.smoothstep(position, .94, 1);
     }
-    renderWorld();
+    renderWorld([
+      ['common.earth', earth, 1, math.smoothstep(position, .19, .26)],
+      ['common.moon', moon, moon.geometry.parameters.radius, math.smoothstep(position, .18, .24) * (1 - math.smoothstep(position, .45, .62))],
+      ['common.sun', sun, sunGlow.scale.x * .23, math.smoothstep(position, .67, .77)]
+    ]);
     terrain.transparent = false;
     terrain.opacity = 1;
-    label(t('common.earth'), earth, math.smoothstep(position, .19, .26));
-    label(t('common.moon'), moon, math.smoothstep(position, .18, .24) * (1 - math.smoothstep(position, .45, .62)));
-    label(t('common.sun'), sun, math.smoothstep(position, .67, .77));
   }
 
   function flightFrame(elapsed, reduceMotion) {
@@ -317,7 +341,8 @@ export async function createScene(container, labels, lookLabels) {
       }
       streakAttribute.needsUpdate = true;
     }
-    renderWorld();
+    const labelOpacity = 1 - math.smoothstep(progress, 0, .13);
+    renderWorld([['common.earth', earth, 1, labelOpacity], ['common.sun', sun, sunGlow.scale.x * .23, labelOpacity]]);
     const canvas = renderer.domElement;
     const point = projectAnchor(destination, camera, canvas);
     const rim = projectAnchor(destination.clone().add(vector(0, asteroidScale, 0)), camera, canvas);
@@ -327,18 +352,13 @@ export async function createScene(container, labels, lookLabels) {
         radius: Math.abs(point.y - rim.y), visible: true
       };
     }
-    const labelOpacity = 1 - math.smoothstep(progress, 0, .13);
-    label(t('common.earth'), earth, labelOpacity);
-    label(t('common.sun'), sun, labelOpacity);
   }
 
   function earthFrame(mode, reference) {
     setScene(mode === 'moon' ? 'earth' : 'stellar');
     if (mode === 'stellar') {
       lookAt(vector(0, .35, 13.5), stageLook);
-      renderWorld();
-      label(t('common.solarSystem'), homeDot, 1, lookLabels);
-      label(t('world.pandora.referenceName'), alpha, 1, lookLabels);
+      renderWorld([['common.solarSystem', homeDot, .24], ['world.pandora.referenceName', alpha, .34]]);
       return;
     }
     if (mode === 'moon') {
@@ -414,11 +434,10 @@ export async function createScene(container, labels, lookLabels) {
   }
 
   function render(view) {
-    labels.replaceChildren();
-    lookLabels.replaceChildren();
+    for (const label of captions.values()) label.visible = false;
     camera.up.set(0, 1, 0);
     b612Title.visible = false;
-    firstFlightTarget = welcomeEarth = null;
+    firstFlightTarget = null;
     if (view.look) {
       earthFrame(view.look, view.earthReference);
       return;
@@ -442,8 +461,7 @@ export async function createScene(container, labels, lookLabels) {
       lookAt(vector((portrait ? -.2 : -.48) + .065 * view.parallax.x, .12 + .045 * view.parallax.y, 2.65),
         vector(-height * camera.aspect * (portrait ? .31 : .50) - .48, .04, 0));
       earthAngle(.13, -1.58, -.21);
-      renderWorld();
-      welcomeEarth = projectAnchor(earth.getWorldPosition(markerPosition).add(vector(-.30, -.21, .65)), camera, renderer.domElement);
+      renderWorld(renderer.domElement.clientWidth >= 680 ? [['common.earth', earth, 1]] : []);
     } else if (view.screen === 'intro') {
       introFrame(view.progress, view.reduceMotion);
     } else if (view.screen === 'flight') {
@@ -505,7 +523,6 @@ export async function createScene(container, labels, lookLabels) {
     routePoints: expedition.routePoints,
     routeTarget: expedition.routeTarget,
     firstFlightTarget: () => firstFlightTarget,
-    welcomeEarth: () => welcomeEarth,
     surfaceSignals: expedition.surfaceSignals,
     async prepare(id) { expedition.prepare(id); },
     resize() {

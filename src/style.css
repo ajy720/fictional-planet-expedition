@@ -7,7 +7,9 @@
   --accent: #ffdbb9;
   --edge: clamp(24px, 4vw, 64px);
   --mono: "SFMono-Regular", "IBM Plex Mono", Consolas, monospace;
-  --shadow: 0 1px 3px #05080e, 0 1px 11px #05080ed9;
+  --contrast-shadow: 0 1px 3px #05080e, 0 1px 11px #05080ed9;
+  --shadow: var(--contrast-shadow);
+  --hud-glow: 0 0 6px #ffdbb940, 0 0 13px #ffe7d61a;
   font: 16px/1.6 Inter, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   background: var(--space);
   color: var(--ink);
@@ -157,18 +159,17 @@ body[data-screen="surface"] .journey::before {
     linear-gradient(0deg, #05080ef2, #05080e88 20%, transparent 39%);
 }
 
-.scene-labels, .map-markers, .departure-markers { position: absolute; inset: 0; pointer-events: none; }
-.scene-labels span, .world-caption, .departure-marker, .map-earth {
+.scene-labels, .map-markers { position: absolute; inset: 0; pointer-events: none; }
+.scene-labels span {
   position: absolute; display: flex; align-items: center; gap: 7px;
   font-size: .8125rem; font-weight: 560; color: var(--ink); text-shadow: var(--shadow);
   white-space: nowrap; transform: translate(6px, 5px);
 }
-.scene-labels span::before, .world-caption::before {
+.scene-labels span::before {
   content: ""; width: 16px; height: 1px; background: var(--accent); opacity: .72;
 }
-.scene-labels .echo-caption { color: #c4f3ff; transform: translate(8px, -50%); }
+.scene-labels .echo-caption { color: #c4f3ff; translate: 8px -50%; }
 .echo-caption::before { background: currentColor; }
-.world-caption { color: #f4f0eb; }
 .scene-labels .orbit-caption { font-size: .875rem; transform: translate(10px, -112%); }
 .scene-labels .orbit-caption::before { width: 7px; }
 .scene-labels .orbit-caption:nth-child(2) { transform: translate(-50%, 12px); }
@@ -186,7 +187,7 @@ body[data-screen="surface"] .journey::before {
 .optics-frame.infrared { color: #ffa8ac; }
 .optics-frame.infrared::before { border-color: #ffa8ac51; }
 #optics-mode { position: absolute; right: 13%; top: calc(24% + 9px); }
-.optics-star { position: absolute; left: 19%; top: calc(33.5% + 12px); transform: translateX(-50%); }
+.optics-star { position: absolute; left: 19%; top: calc(33.5% + 12px); translate: -50% 0; }
 body[data-looking] .optics-frame { visibility: hidden; }
 
 
@@ -249,7 +250,7 @@ body:is([data-screen="rose"], [data-screen="orbit"]) .scene-actions { grid-colum
 #send-echo[aria-disabled="true"] { opacity: .58; cursor: default; text-decoration: none; }
 #surface-actions [data-anchor$="-path"] button {
   display: grid; justify-items: start; gap: 2px; padding: 5px 0;
-  line-height: 1.45; text-shadow: 0 1px 3px #1d120b, 0 0 9px #1d120bd9;
+  line-height: 1.45; text-shadow: 0 1px 3px #1d120b, 0 0 9px #1d120bd9, var(--hud-glow);
 }
 #surface-actions [data-anchor$="-path"] button strong {
   font-weight: 650; text-decoration: underline; text-decoration-color: #ffdbb998; text-underline-offset: .25em;
@@ -269,7 +270,7 @@ body:is([data-screen="rose"], [data-screen="orbit"]) .scene-actions { grid-colum
 .desert-binoculars::before { width: 34px; height: 34px; border-radius: 50%; }
 .desert-binoculars::after { width: 58px; border-width: 1px 0 0; }
 .desert-water-reading {
-  position: absolute; z-index: 1; transform: translateY(-50%); pointer-events: none; white-space: nowrap;
+  position: absolute; z-index: 1; translate: 0 -50%; pointer-events: none; white-space: nowrap;
   color: var(--accent); font: 550 clamp(1.25rem, 2.5vw, 2rem)/1.2 var(--mono); text-shadow: var(--shadow);
 }
 .water-bottle { position: relative; width: 38px; padding-top: 10px; flex: none; }
@@ -333,26 +334,23 @@ body[data-looking] :is(.telemetry, .scene-hud, .log-screen, .topbar, .flight-tar
 .map-marker:is(:hover, :focus-visible, [aria-pressed="true"], [data-current="true"], [data-recommended="true"]) .map-reticle { opacity: .95; }
 .map-marker:is(:hover, :focus-visible, [aria-pressed="true"]) .map-reticle { box-shadow: 0 0 14px #ffdbb970; }
 .map-marker[data-recommended="true"]:not([aria-pressed="true"]) .map-reticle { border-style: dashed; opacity: .65; }
-.map-label, .map-label-note {
-  position: absolute; left: 50%; top: calc(50% + max(10px, var(--planet-radius)) + 8px);
-  transform: translateX(-50%); white-space: nowrap; text-shadow: var(--shadow); font-size: .875rem;
+.map-label-hit { position: absolute; }
+.map-label-note {
+  position: absolute; left: 50%; top: calc(50% + var(--planet-radius) + 8px);
+  translate: -50% 0; white-space: nowrap; text-shadow: var(--shadow);
+  color: var(--accent); font-size: .75rem;
 }
-.route-map:has(.map-inspection.projected) .map-marker[aria-pressed="true"] :is(.map-label, .map-label-note) { opacity: 0; }
-.map-label-note { top: calc(50% + max(10px, var(--planet-radius)) + 28px); color: var(--accent); font-size: .75rem; }
-.map-earth, .departure-marker { transform: translate(-50%, calc(var(--planet-radius) + 7px)); }
-.departure-marker {
-  transform: translate(-50%, calc(var(--planet-radius) + 7px)) scale(var(--label-scale, 1));
-  transform-origin: center top;
-}
-.departure-marker[data-active="true"] { color: var(--accent); }
+.map-label-note:empty { display: none; }
+.route-map:has(.map-inspection.projected) .map-marker[aria-pressed="true"] .map-label-note { display: none; }
 .map-footer {
   position: absolute; inset: auto var(--edge) clamp(16px, 3.5vh, 34px);
   display: flex; flex-direction: column-reverse; gap: 6px;
 }
+.map-tools { width: fit-content; max-width: 100%; }
 .map-tools .button { color: var(--accent); text-decoration: underline; text-underline-offset: .34em; }
 .map-scale { margin: 0; text-shadow: var(--shadow); }
 .map-inspection { max-width: min(460px, 100%); text-shadow: var(--shadow); }
-.map-inspection.projected { max-width: min(310px, 34vw); }
+.map-inspection.projected { width: max-content; max-width: min(310px, 34vw); }
 .map-inspection h3 { margin: 3px 0 1px; font-size: clamp(1.45rem, 2.4vw, 2.2rem); font-weight: 540; letter-spacing: -.045em; line-height: 1.16; }
 .map-world-details p { margin: 0; word-break: keep-all; }
 #map-world-work { font-size: .875rem; }
@@ -505,7 +503,6 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
   .welcome { padding-inline: var(--edge); background: linear-gradient(90deg, #05080eb9, #05080e3a 84%); }
   .welcome h1 { font-size: clamp(2.9rem, 12vw, 4.4rem); }
   .welcome-content { padding-bottom: 20px; }
-  .world-caption { display: none; }
   .scene-labels .orbit-caption { font-size: .75rem; }
   .optics-frame::before { inset-inline: 9%; }
   .telemetry { max-width: 87vw; top: 91px; }
@@ -520,7 +517,6 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
       radial-gradient(ellipse at 0 10%, #05080e72, transparent 57%);
   }
   .map-heading { top: 65px; }
-  .map-label { font-size: .76rem; }
   .map-label-note { display: none; }
   .log-screen { padding: 62px var(--edge) 20px; background: linear-gradient(90deg, #05080ef4, #05080eb4); }
   .log-panel { width: 100%; }
@@ -564,7 +560,7 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
 .scene-labels .orbit-caption[data-marker] b { position: absolute; left: 10px; bottom: 4px; }
 .scene-labels .orbit-caption[data-marker][data-side="left"] b { left: auto; right: 10px; }
 .scene-labels .orbit-caption[data-marker][data-vertical="high"] b { bottom: 14px; }
-.scene-labels .orbit-caption[data-marker="center"] b { top: 8px; left: 0; bottom: auto; transform: translateX(-50%); }
+.scene-labels .orbit-caption[data-marker="center"] b { top: 8px; left: 0; bottom: auto; translate: -50% 0; }
 
 .binary-ruler {
   position: absolute; right: var(--edge); top: clamp(86px, 12dvh, 130px);
@@ -616,4 +612,49 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
   .binary-ruler { top: 103px; }
   .binary-time { gap: 7px; }
   .binary-controls .button { padding-inline: 6px; }
+}
+
+/* Move the content inside each plane while keeping projected anchors in viewport coordinates. */
+[data-hud="upper-left"] { --hud-yaw: 11deg; --hud-pitch: -4deg; --hud-roll: 1.5deg; --hud-origin: left top; }
+[data-hud="upper-right"] { --hud-yaw: -11deg; --hud-pitch: -4deg; --hud-roll: -1.5deg; --hud-origin: right top; }
+:is([data-hud="lower-left"], .map-inspection:not(.projected) > .map-inspection-content) {
+  --hud-yaw: 12deg; --hud-pitch: 6deg; --hud-roll: -2.5deg; --hud-origin: left bottom;
+}
+[data-hud="lower-right"] { --hud-yaw: -12deg; --hud-pitch: 6deg; --hud-roll: 2.5deg; --hud-origin: right bottom; }
+:is([data-hud="lower-center"], .scene-actions) { --hud-pitch: 7deg; --hud-origin: center bottom; }
+[data-hud="reading"] { --hud-yaw: 4deg; --hud-roll: .5deg; --hud-origin: left center; --hud-motion-scale: .55; }
+.projected {
+  --hud-yaw: var(--callout-yaw, 7deg); --hud-pitch: 2deg;
+  --hud-origin: var(--callout-origin, left center); --hud-motion-scale: .35;
+}
+:is([data-anchor="polyphemus"], .flight-target span, .earth-point-label, .orbit-caption b,
+  .binary-ruler b, .optics-star, .echo-caption, .desert-water-reading, .map-label-note) {
+  --hud-yaw: 7deg; --hud-roll: -1.5deg; --hud-origin: left center; --hud-motion-scale: .35;
+}
+.orbit-caption[data-side="left"] b { --hud-yaw: -7deg; --hud-origin: right center; }
+
+:is([data-hud], .map-inspection-content,
+  .scene-actions > :is(#instruction, .stage-readout, .buttons, #surface-record, .spatial-callout:not(.projected)),
+  .surface-controls > :is(.button, .binary-controls, [data-anchor]:not(.projected, [data-anchor="polyphemus"])),
+  .projected > :is(.button, .range-label), [data-anchor="polyphemus"] > .button,
+  .flight-target span, .earth-point-label, .orbit-caption b,
+  .binary-ruler b, .optics-star, .echo-caption, .desert-water-reading, .map-label-note) {
+  --hud-move-x: calc(var(--hud-pointer-x, 0) * var(--hud-motion-scale, 1) * var(--hud-viewport-motion, 1));
+  --hud-move-y: calc(var(--hud-pointer-y, 0) * var(--hud-motion-scale, 1) * var(--hud-viewport-motion, 1));
+  --shadow: var(--contrast-shadow), var(--hud-glow);
+  text-shadow: var(--shadow);
+  transform-origin: var(--hud-origin, center);
+  transform: translate3d(calc(var(--hud-move-x) * 6px), calc(var(--hud-move-y) * 4px), 0)
+    perspective(1250px)
+    rotateZ(calc(var(--hud-roll, 0deg) * var(--hud-angle-scale, 1)))
+    rotateX(calc(var(--hud-pitch, 0deg) * var(--hud-angle-scale, 1) - var(--hud-move-y) * 1deg))
+    rotateY(calc(var(--hud-yaw, 0deg) * var(--hud-angle-scale, 1) + var(--hud-move-x) * 1deg));
+}
+
+@media (max-width: 679px), (max-height: 550px) {
+  :root { --hud-angle-scale: .45; --hud-viewport-motion: .65; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --hud-viewport-motion: 0; }
 }

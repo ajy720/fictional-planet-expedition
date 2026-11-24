@@ -25,7 +25,7 @@
   </header>
   <main>
     <section id="welcome" class="welcome" aria-labelledby="title">
-      <div class="welcome-content">
+      <div class="welcome-content" data-hud="upper-left">
         <h1 id="title" tabindex="-1" data-copy="welcome.title"></h1>
         <p class="welcome-copy" data-copy="welcome.description"></p>
         <div id="start-actions" class="start-actions">
@@ -38,27 +38,24 @@
         </div>
         <p id="welcome-status" role="status" class="small" hidden></p>
       </div>
-      <span id="welcome-earth" class="world-caption" aria-hidden="true" hidden data-copy="common.earth"></span>
-      <p class="welcome-footer" data-copy="welcome.footer"></p>
+      <p class="welcome-footer" data-hud="lower-left" data-copy="welcome.footer"></p>
     </section>
 
     <section id="journey" class="journey" aria-labelledby="stage-title" hidden>
       <div id="optics-frame" class="optics-frame" aria-hidden="true" hidden>
-        <span id="optics-mode"></span>
+        <span id="optics-mode" data-hud="upper-right"></span>
         <span class="optics-star" data-copy="world.adrian.referenceName"></span>
       </div>
-      <div id="scene-labels" class="scene-labels" aria-hidden="true"></div>
       <div id="orbit-labels" class="scene-labels" aria-hidden="true" hidden></div>
       <div id="echo-labels" class="scene-labels" aria-hidden="true" hidden></div>
-      <div id="departure-markers" class="departure-markers" aria-hidden="true" hidden></div>
       <div id="flight-target" class="flight-target" aria-hidden="true" hidden><i></i><span id="flight-target-name"></span></div>
-      <div class="telemetry">
+      <div class="telemetry" data-hud="upper-left">
         <p id="stage-context" class="eyebrow"></p>
         <h2 id="stage-title" tabindex="-1"></h2>
         <p id="stage-description"></p>
       </div>
       <div class="scene-hud">
-        <div class="readout">
+        <div class="readout" data-hud="lower-left">
           <span id="metric-label" class="eyebrow"></span>
           <strong id="metric"></strong>
           <span id="metric-note" class="small"></span>
@@ -111,7 +108,7 @@
             <button type="button" id="record" class="button primary" hidden><span data-copy="common.viewRecord"></span> <span aria-hidden="true">↗</span></button>
           </div>
         </div>
-        <div class="scene-utilities">
+        <div class="scene-utilities" data-hud="lower-right">
           <button type="button" id="transmit" class="button" hidden data-copy="communication.send"></button>
           <button type="button" id="look-back" class="button" hidden><span data-copy="earthView.heading"></span> <span aria-hidden="true">↶</span></button>
           <button type="button" id="abort" class="utility" hidden data-copy="common.abort"></button>
@@ -120,7 +117,7 @@
     </section>
 
     <section id="log" class="log-screen" aria-labelledby="log-title" hidden>
-      <article class="log-panel">
+      <article class="log-panel" data-hud="reading">
         <p class="eyebrow"><span class="eyebrow-dot"></span> <span data-copy="record.heading"></span> <strong id="log-count"></strong></p>
         <h2 id="log-title" tabindex="-1"></h2>
         <p id="log-work" class="log-work"></p>
@@ -152,44 +149,46 @@
           <button type="button" id="home" class="button" data-copy="common.home"></button>
         </div>
       </article>
-      <div class="log-dot" aria-hidden="true"><i></i> <span data-copy="common.earth"></span></div>
+      <div class="log-dot" data-hud="lower-right" aria-hidden="true"><i></i> <span data-copy="common.earth"></span></div>
     </section>
 
     <section id="route-map" class="route-map" aria-labelledby="map-title" hidden>
       <div class="map-heading">
-        <div>
+        <div data-hud="upper-left">
           <p id="map-position" class="eyebrow"></p>
           <h2 id="map-title" tabindex="-1" data-copy="map.title"></h2>
         </div>
-        <button type="button" id="map-back" class="button" data-copy="common.close"></button>
+        <button type="button" id="map-back" class="button" data-hud="upper-right" data-copy="common.close"></button>
       </div>
       <div id="map-markers" class="map-markers" role="group" data-copy-aria-label="map.markers"></div>
       <div class="map-footer">
-        <div class="map-tools">
+        <div class="map-tools" data-hud="lower-left">
           <button type="button" id="distance-open" class="button"><span data-copy="distance.openComparison"></span> <span aria-hidden="true">↗</span></button>
           <p class="map-scale small" data-copy="map.scaleNote"></p>
         </div>
         <div id="map-inspection" class="map-inspection spatial-callout" hidden>
-          <div class="map-world">
-            <p id="map-world-state" class="eyebrow"></p>
-            <h3 id="map-world-name" tabindex="-1"></h3>
-          </div>
-          <div class="map-world-details">
-            <p id="map-world-work"></p>
-            <p id="map-world-distance" class="small"></p>
-            <p id="map-distance-analogy" class="small distance-analogy" hidden></p>
-            <p id="map-flight-length" class="small" hidden></p>
-          </div>
-          <div class="buttons">
-            <button type="button" id="map-record" class="button" hidden data-copy="map.readRecord"></button>
-            <button type="button" id="map-travel" class="button primary" hidden></button>
+          <div class="map-inspection-content">
+            <div class="map-world">
+              <p id="map-world-state" class="eyebrow"></p>
+              <h3 id="map-world-name" tabindex="-1"></h3>
+            </div>
+            <div class="map-world-details">
+              <p id="map-world-work"></p>
+              <p id="map-world-distance" class="small"></p>
+              <p id="map-distance-analogy" class="small distance-analogy" hidden></p>
+              <p id="map-flight-length" class="small" hidden></p>
+            </div>
+            <div class="buttons">
+              <button type="button" id="map-record" class="button" hidden data-copy="map.readRecord"></button>
+              <button type="button" id="map-travel" class="button primary" hidden></button>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
     <section id="directory" class="directory-screen" aria-labelledby="directory-title" hidden>
-      <article class="directory-panel">
+      <article class="directory-panel" data-hud="reading">
         <div class="directory-heading">
           <div><p id="directory-count" class="eyebrow"></p><h2 id="directory-title" tabindex="-1" data-copy="archive.title"></h2></div>
           <button type="button" id="directory-back" class="button" data-copy="common.close"></button>
@@ -204,7 +203,7 @@
     </section>
 
     <section id="ending" class="ending-screen" data-copy-aria-label="ending.label" hidden>
-      <div class="ending-caption">
+      <div class="ending-caption" data-hud="lower-center">
         <button type="button" id="ending-step" class="button" hidden data-copy="ending.step"></button>
         <div id="ending-question" hidden>
           <p class="eyebrow" data-copy="earthView.heading"></p>
@@ -263,9 +262,8 @@
     </div>
   </dialog>
   <dialog id="earth-dialog" class="earth-dialog" aria-labelledby="earth-title">
-    <div id="look-labels" class="scene-labels" aria-hidden="true"></div>
     <span class="earth-point-label" aria-hidden="true" data-copy="common.earth"></span>
-    <div class="earth-caption">
+    <div class="earth-caption" data-hud="lower-left">
       <p id="earth-context" class="eyebrow" data-copy="earthView.heading"></p>
       <h2 id="earth-title" data-copy="earthView.title"></h2>
       <p id="earth-note"></p>
@@ -277,7 +275,7 @@
     </div>
   </dialog>
   <dialog id="communication-dialog" class="dialog communication-dialog" aria-labelledby="communication-title">
-    <div class="dialog-content">
+    <div class="dialog-content" data-hud="reading">
       <div class="dialog-title">
         <h2 id="communication-title" data-copy="communication.title"></h2>
         <button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button>
