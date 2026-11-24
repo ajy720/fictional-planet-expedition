@@ -4,7 +4,7 @@ import { adjustOrbit, createScene, initialOrbit } from './scene.js';
 import { createAudio } from './audio.js';
 import { introSections, introSectionAt, lastIntroSection } from './intro.js';
 
-import { arrivalNodes, desertRoutes, destinations, distanceAnalogy, earthAngularDiameter, flightDuration, millerTimes, petrovaCheckpoint } from './destinations.js';
+import { arrivalNodes, communicationPlaybackMs, communicationProgressMax, communicationStage, desertRoutes, destinations, distanceAnalogy, earthAngularDiameter, flightDuration, millerTimes, petrovaCheckpoint } from './destinations.js';
 import { echoCount, echoInProgress, echoTargets } from './erid-sonar.js';
 import { newExpedition, restoreExpedition, saveVersion } from './expedition-state.js';
 import { createExpeditionUI } from './expedition-ui.js';
@@ -233,7 +233,7 @@ function renderScreen() {
   show('observation-readout', surface);
   if (!surface) {
     show('surface-record', false);
-    $('stage-title').classList.remove('in-scene');
+    ui.positionSurface(null);
   }
   show('transmit', (departure || routed) && state.destination === 'pandora');
   copy('transmit', state.communication === null ? t('communication.send') : t('communication.history'));
@@ -286,9 +286,7 @@ function renderScreen() {
     copy('stage-description', surface ? destination.observation : t('common.workTitle', { work: departure ? origin.work : destination.work }));
     copy('metric-label', t('flight.distanceLabel'));
     copy('metric', destination.distance);
-    copy('metric-note', routed ? t(reference ? 'flight.progressWithLightTime' : 'flight.progress', {
-      second: flightDuration(state.from, state.destination) / 1000
-    }) : '');
+    copy('metric-note', '');
     copy('flight-target-name', destination.name);
     show('departure-prev', departure && phase > 0);
     if (departure) copy('departure-next', phase === 2 ? t('flight.continueToCruise') : t('flight.nextView'));
@@ -1286,12 +1284,14 @@ function tickExpedition(now, viewpointChanged) {
   const delta = lastTime ? now - lastTime : 0;
   lastTime = now;
   if (communicating) {
-    if (state.communication < 8000) {
-      const step = Math.floor(state.communication / 4000);
-      state.communication = Math.min(8000, state.communication + delta);
+    if (state.communication < communicationProgressMax) {
+      const step = communicationStage(state.communication);
+      state.communication = Math.min(communicationProgressMax,
+        state.communication + delta * communicationProgressMax / communicationPlaybackMs);
       ui.renderCommunication(state.communication);
-      if (Math.floor(state.communication / 4000) > step) {
-        announce(t(step ? 'communication.replyAnnouncement' : 'communication.arrivalAnnouncement'));
+      const nextStep = communicationStage(state.communication);
+      if (nextStep > step) {
+        announce(t(nextStep === 2 ? 'communication.replyAnnouncement' : 'communication.arrivalAnnouncement'));
         if (state.sound) audio.effect();
       }
       throttledSave();

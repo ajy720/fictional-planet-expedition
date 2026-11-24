@@ -1,6 +1,6 @@
 import { formatFixed, formatNumber, joinLabels, localizeDom, t } from './copy/index.js';
 import { MathUtils, Vector3 } from 'three';
-import { desertRoutes, destinationIds, destinations, distanceAnalogy, millerTimes, pandoraScale, routeFlight } from './destinations.js';
+import { communicationProgressMax, communicationStage, desertRoutes, destinationIds, destinations, distanceAnalogy, millerTimes, pandoraScale, routeFlight } from './destinations.js';
 import { echoInProgress } from './erid-sonar.js';
 import { desertStep, eridTone, eridSignal, firstMillerWave, millerCrestAt, observationStatus, recordEntryText, suitTestVolume, tatooineShadowStatus, waterReport } from './observations.js';
 import { positionCallout } from './spatial-ui.js';
@@ -587,12 +587,12 @@ export function createExpeditionUI(callbacks) {
     $('directory-entries').replaceChildren(...entries);
   }
 
-  function renderCommunication(elapsed) {
-    $('communication-progress').value = elapsed;
+  function renderCommunication(progress) {
+    const stage = communicationStage(progress);
+    $('communication-progress').value = progress / communicationProgressMax;
     $('signal-stages').querySelectorAll('li').forEach((item, i) => {
-      const reached = elapsed >= i * 4000;
-      item.hidden = !reached;
-      if (reached && (i === 2 || elapsed < (i + 1) * 4000)) item.setAttribute('aria-current', 'step');
+      item.hidden = i > stage;
+      if (i === stage) item.setAttribute('aria-current', 'step');
       else item.removeAttribute('aria-current');
     });
   }

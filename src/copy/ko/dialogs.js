@@ -4,6 +4,7 @@ export default {
   "communication.assumption": "지구 중계국이 발신한 시점부터 계산합니다. 상대가 신호를 받자마자 답장을 보낸다고 가정합니다.",
   "communication.history": "통신 기록 보기",
   "communication.playback": "시간 압축 재생",
+  "communication.playbackScale": "통신에 걸리는 1년을 재생 시간 1초로 압축했습니다.",
   "communication.progress": "통신 재생 진행",
   "communication.replyAnnouncement": "지구에서 답장 수신 · 발신 후 약 8.7년",
   "communication.replyYears": "발신 후 약 8.7년",

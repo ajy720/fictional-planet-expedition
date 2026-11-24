@@ -1,4 +1,4 @@
-import { desertRoutes, destinationIds, flightDuration, petrovaCheckpoint } from './destinations.js';
+import { communicationProgressMax, desertRoutes, destinationIds, flightDuration, petrovaCheckpoint } from './destinations.js';
 import { echoDuration } from './erid-sonar.js';
 import { desertSurveyDuration, newObservation, restoreRecordEntries, validRecordEntry } from './observations.js';
 import { defaultOrbitRate, orbitRates, outerOrbit } from './tatooine-orbit.js';
@@ -51,7 +51,7 @@ export function restoreExpedition(data) {
     || ![null, ...destinationIds].includes(data.from) || ![null, ...destinationIds].includes(data.current)
     || !between(data.launchProgress, 0, 1) || !between(data.endingProgress, 0, 1)
     || ![true, false].includes(data.communicationOpen)
-    || (data.communication !== null && !between(data.communication, 0, 8000))
+    || (data.communication !== null && !between(data.communication, 0, communicationProgressMax))
     || (data.communicationOpen && (data.destination !== 'pandora' || !['launchpad', 'route-flight'].includes(data.screen)))) return null;
   if (data.look === 'stellar' && (data.screen !== 'log' || data.recordView !== 'b612')) return null;
   if (!data.records || typeof data.records !== 'object' || Array.isArray(data.records)

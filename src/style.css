@@ -474,6 +474,7 @@ dialog { color: var(--ink); }
 .earth-caption h2 { margin: 5px 0 7px; }
 .earth-caption .source-link { display: table; }
 .earth-caption p:not(.eyebrow) { margin: 0 0 8px; color: var(--muted); }
+.communication-dialog .eyebrow + .small { margin: 4px 0 0; }
 .signal-stages { padding-left: 23px; }
 .signal-stages li { padding: 5px 0; }
 .signal-stages li[aria-current] { color: var(--accent); }

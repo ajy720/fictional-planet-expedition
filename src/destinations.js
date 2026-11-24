@@ -114,6 +114,10 @@ export const destinations = {
 };
 
 export const destinationIds = Object.keys(destinations);
+// Keep the stored progress range so existing communication saves can resume.
+export const communicationProgressMax = 8000;
+export const communicationPlaybackMs = Math.round(destinations.pandora.reference.lightYears * 2 * 1000);
+export const communicationStage = progress => Math.floor(progress * 2 / communicationProgressMax);
 
 export const routeLayout = {
   earth: [-27, -2.7, -1],

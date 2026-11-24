@@ -1,5 +1,5 @@
 import { defaultLocale, formatMessage, getLocale, joinLabels, t } from './copy/index.js';
-import { desertRoutes, echoName, millerTimes } from './destinations.js';
+import { communicationProgressMax, desertRoutes, echoName, millerTimes } from './destinations.js';
 import { echoCount, echoDuration, echoInProgress, echoTargets } from './erid-sonar.js';
 import { defaultOrbitRate, groundSkyAt, outerOrbit } from './tatooine-orbit.js';
 
@@ -203,7 +203,7 @@ function recordEntries(id, data, communication) {
       return data.sproutRemoved ? [{ id: 'sprout' }] : [];
     case 'pandora': {
       const entries = data.orbitSeen ? [{ id: 'pandoraOrbit' }] : [];
-      if (communication >= 8000) entries.push({ id: 'sentGreeting' });
+      if (communication >= communicationProgressMax) entries.push({ id: 'sentGreeting' });
       return entries;
     }
     case 'adrian':
@@ -230,7 +230,7 @@ function recordEntries(id, data, communication) {
 
 export function restoreRecordEntries(id, view, lines) {
   // Match recorded lines rather than the current expedition's communication or observation state.
-  const candidates = recordEntries(id, view, 8000).filter(entry => validRecordEntry(id, entry));
+  const candidates = recordEntries(id, view, communicationProgressMax).filter(entry => validRecordEntry(id, entry));
   const known = new Map(candidates.map(entry => [recordEntryText(entry, defaultLocale), entry]));
   return lines.map(line => known.get(line) ?? { legacyText: line });
 }

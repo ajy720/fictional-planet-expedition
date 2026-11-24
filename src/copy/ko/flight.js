@@ -51,8 +51,6 @@ export default {
   "flight.paused": "현재 위치에서 비행을 멈췄습니다.",
   "flight.petrovaTitle": "페트로바 선 관측",
   "flight.previousView": "← 이전 시점",
-  "flight.progress": "항해 시간 {second}초",
-  "flight.progressWithLightTime": "항해 시간 {second}초",
   "flight.reachedDestination": "{destination}에 도착했습니다.",
   "flight.reducedMotion": "정지 화면으로 비행 구간을 살펴보세요.",
   "flight.resume": "계속 비행",
