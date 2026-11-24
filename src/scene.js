@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { atmosphere, glow, makeB612, randomSequence } from './models.js';
+import { createExpeditionScenes } from './expedition-scene.js';
 import { introSectionAt } from './intro.js';
+import { createSpatialTitle, projectAnchor } from './spatial-title.js';
 
 const vector = (x, y, z) => new THREE.Vector3(x, y, z);
 const ORBIT_START = vector(.4, .28, 1).normalize();
@@ -95,6 +97,11 @@ export async function createScene(container, labels, lookLabels) {
   moon.rotation.y = .24;
   earthSystem.add(earth, moon);
   scene.add(earthSystem);
+  const endingDot = glow(0x84bdfc);
+  endingDot.visible = false;
+  endingDot.renderOrder = 3;
+  endingDot.material.depthTest = false;
+  scene.add(endingDot);
 
   const au = 149597870.7 / 6371;
   const solar = new THREE.Group();
@@ -141,7 +148,14 @@ export async function createScene(container, labels, lookLabels) {
   scene.add(stellar);
 
   const asteroid = makeB612();
-  scene.add(asteroid.group);
+  const expedition = createExpeditionScenes(renderer, camera, asteroid, earthSphere);
+  const b612Title = createSpatialTitle('B612');
+  const titleRight = vector(0, 1, 0).cross(ORBIT_START).normalize();
+  b612Title.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(ORBIT_START, vector(0, 0, 0), vector(0, 1, 0)));
+  b612Title.rotateY(-.2);
+  scene.add(asteroid.group, b612Title);
+  let firstFlightTarget;
+  let welcomeEarth;
   const streakPositions = new Float32Array(138 * 6);
   const particles = Array.from({ length: 138 }, () => ({
     x: (random() - .5) * 65, y: (random() - .5) * 36, z: random() * 105, size: .12 + random() * 1.5
@@ -162,6 +176,7 @@ export async function createScene(container, labels, lookLabels) {
   const orbitPosition = new THREE.Vector3();
   const spherical = new THREE.Spherical();
   const stageLook = vector(0, 0, 0);
+  const endingDirection = vector(-.065, Math.sin(.045), Math.cos(.045)).normalize();
   const overviewDistance = 260000;
   const departure = introPose(1);
   const departureHeading = departure.target.clone().sub(departure.position).normalize();
@@ -253,7 +268,18 @@ export async function createScene(container, labels, lookLabels) {
     lookAt(pose.position, pose.target, Math.max(.01, pose.distance / 25000), 1200000);
     earthAngle(.13, -1.55 + position * .26, -.17);
     updateSolarMarkers(position);
+    const terrain = asteroid.terrain.material;
+    if (position >= .94) {
+      asteroid.group.visible = true;
+      asteroid.garden.visible = false;
+      asteroid.group.position.copy(destination);
+      asteroid.group.scale.setScalar(asteroidScale);
+      terrain.transparent = true;
+      terrain.opacity = math.smoothstep(position, .94, 1);
+    }
     renderWorld();
+    terrain.transparent = false;
+    terrain.opacity = 1;
     label('지구', earth, math.smoothstep(position, .19, .26));
     label('달', moon, math.smoothstep(position, .18, .24) * (1 - math.smoothstep(position, .45, .62)));
     label('태양', sun, math.smoothstep(position, .67, .77));
@@ -262,14 +288,14 @@ export async function createScene(container, labels, lookLabels) {
   function flightFrame(elapsed, reduceMotion) {
     const progress = math.clamp(elapsed / 8000, 0, 1);
     setScene('solar');
-    asteroid.group.visible = progress > .06;
+    asteroid.group.visible = true;
     const approachLight = math.smoothstep(progress, .38, .93);
     sunlight.intensity = math.lerp(2.45, 2.25, approachLight);
     flowerLight.intensity = 1.9 * approachLight;
     fill.intensity = math.lerp(.64, .82, approachLight);
     asteroid.group.position.copy(destination);
     asteroid.group.scale.setScalar(asteroidScale);
-    const closing = 1 - Math.pow(1 - progress, 1.7);
+    const closing = progress ** 1.65;
     const distance = startingDistance * Math.pow(initial.radius * asteroidScale / startingDistance, closing);
     heading.copy(departureOffset).normalize().lerp(ORBIT_START, math.smoothstep(progress, .38, .91)).normalize();
     const position = destination.clone().addScaledVector(heading, distance);
@@ -291,12 +317,21 @@ export async function createScene(container, labels, lookLabels) {
       streakAttribute.needsUpdate = true;
     }
     renderWorld();
+    const canvas = renderer.domElement;
+    const point = projectAnchor(destination, camera, canvas);
+    const rim = projectAnchor(destination.clone().add(vector(0, asteroidScale, 0)), camera, canvas);
+    if (point && rim) {
+      firstFlightTarget = {
+        x: point.x / canvas.clientWidth * 100, y: point.y / canvas.clientHeight * 100,
+        radius: Math.abs(point.y - rim.y), visible: true
+      };
+    }
     const labelOpacity = 1 - math.smoothstep(progress, 0, .13);
     label('지구', earth, labelOpacity);
     label('태양', sun, labelOpacity);
   }
 
-  function earthFrame(mode) {
+  function earthFrame(mode, reference) {
     setScene(mode === 'moon' ? 'earth' : 'stellar');
     if (mode === 'stellar') {
       lookAt(vector(0, .35, 13.5), stageLook);
@@ -312,13 +347,38 @@ export async function createScene(container, labels, lookLabels) {
       return;
     }
     alpha.visible = vectorLine.visible = false;
-    homeDot.position.set(mode === 'voyager' ? .44 : .16, .08, 0);
-    homeDot.scale.setScalar(mode === 'voyager' ? .16 : .22);
+    if (mode === 'nav') {
+      homeDot.position.set(0, 0, 0);
+      homeDot.visible = Boolean(reference);
+      if (reference) homeDot.scale.setScalar(.42 * Math.sqrt(4.37 / reference.lightYears));
+    } else {
+      homeDot.position.set(mode === 'voyager' ? .44 : .16, .08, 0);
+      homeDot.scale.setScalar(mode === 'voyager' ? .16 : .22);
+    }
     lookAt(vector(0, 0, 14), stageLook);
     renderWorld();
-    alpha.visible = vectorLine.visible = true;
+    alpha.visible = vectorLine.visible = homeDot.visible = true;
     homeDot.position.set(-3.8, -.75, 0);
     homeDot.scale.setScalar(.86);
+  }
+
+  function endingFrame(progress) {
+    setScene('earth');
+    const distance = 2.72 * 215 ** (progress * progress);
+    lookAt(endingDirection.clone().multiplyScalar(distance), stageLook);
+    earthAngle(.13, -1.55, -.17);
+
+    // Keep the star field and the dot aligned as the globe recedes into the glow.
+    const glowProgress = math.smoothstep(progress, .86, 1);
+    earth.visible = progress < 1;
+    earth.scale.setScalar(1 - glowProgress);
+    endingDot.visible = glowProgress > 0;
+    endingDot.scale.setScalar(distance * (.12 / 14));
+    endingDot.material.opacity = glowProgress;
+    renderWorld();
+    earth.visible = true;
+    earth.scale.setScalar(1);
+    endingDot.visible = false;
   }
 
   const roseTarget = asteroid.surface.clone().addScaledVector(asteroid.normal, .19);
@@ -356,25 +416,48 @@ export async function createScene(container, labels, lookLabels) {
     labels.replaceChildren();
     lookLabels.replaceChildren();
     camera.up.set(0, 1, 0);
+    b612Title.visible = false;
+    firstFlightTarget = welcomeEarth = null;
     if (view.look) {
-      earthFrame(view.look);
+      earthFrame(view.look, view.earthReference);
       return;
     }
+    if (view.screen === 'ending') {
+      endingFrame(view.reduceMotion && view.endingProgress < 1 ? 0 : view.endingProgress);
+      return;
+    }
+    if (['launchpad', 'route-flight', 'surface', 'log', 'directory', 'archive'].includes(view.screen) && expedition.render(view)) return;
     asteroid.garden.visible = view.screen !== 'flight';
-    asteroid.cover.visible = Boolean(view.covered);
+    asteroid.sproutBed.visible = ['orbit', 'rose'].includes(view.screen);
+    asteroid.sprout.visible = !view.observation.sproutRemoved;
+    asteroid.cover.visible = view.screen === 'log' && view.recordView === 'b612'
+      ? Boolean(view.records.b612)
+      : Boolean(view.covered);
+    asteroid.cover.position.y = view.coverOffset ?? 0;
     if (view.screen === 'start') {
       setScene('earth');
       const height = 2.23 * Math.tan(turn(camera.fov / 2));
       const portrait = camera.aspect < 1.15;
-      lookAt(vector(portrait ? -.2 : -.48, .12, 2.65), vector(-height * camera.aspect * (portrait ? .31 : .50) - .48, .04, 0));
+      lookAt(vector((portrait ? -.2 : -.48) + .065 * view.parallax.x, .12 + .045 * view.parallax.y, 2.65),
+        vector(-height * camera.aspect * (portrait ? .31 : .50) - .48, .04, 0));
       earthAngle(.13, -1.58, -.21);
       renderWorld();
+      welcomeEarth = projectAnchor(earth.getWorldPosition(markerPosition).add(vector(-.30, -.21, .65)), camera, renderer.domElement);
     } else if (view.screen === 'intro') {
       introFrame(view.progress, view.reduceMotion);
     } else if (view.screen === 'flight') {
       flightFrame(view.elapsed, view.reduceMotion);
     } else {
       setScene('asteroid');
+      if (view.screen === 'orbit' || view.roseProgress !== undefined) {
+        const narrow = camera.aspect < 1.15;
+        b612Title.position.copy(ORBIT_START).multiplyScalar(-.82)
+          .addScaledVector(titleRight, narrow ? -.8 : -1.69);
+        b612Title.position.y += narrow ? 1.03 : .77;
+        b612Title.scale.setScalar(narrow ? .64 : .92);
+        b612Title.material.opacity = 1 - math.smoothstep(view.roseProgress || 0, .08, .65);
+        b612Title.visible = b612Title.material.opacity > .01;
+      }
       if (view.roseProgress !== undefined) {
         roseTransition(view.orbit, view.roseProgress);
       } else if (view.screen === 'orbit') {
@@ -394,8 +477,8 @@ export async function createScene(container, labels, lookLabels) {
     }
   }
 
-  function visibleRose() {
-    asteroid.bloom.getWorldPosition(bloomWorld);
+  function visibleSurfaceObject(anchor, radius) {
+    anchor.getWorldPosition(bloomWorld);
     projection.copy(bloomWorld).project(camera);
     if (Math.abs(projection.x) > 1 || Math.abs(projection.y) > 1 || projection.z < -1 || projection.z > 1) return null;
     toBloom.copy(bloomWorld).sub(camera.position);
@@ -403,13 +486,26 @@ export async function createScene(container, labels, lookLabels) {
     raycaster.far = toBloom.length() - .004;
     if (raycaster.intersectObject(asteroid.terrain, false).length) return null;
     const box = renderer.domElement.getBoundingClientRect();
-    return { x: box.left + (projection.x + 1) * box.width / 2, y: box.top + (1 - projection.y) * box.height / 2 };
+    const rim = vector(radius, 0, 0).applyQuaternion(camera.quaternion).add(bloomWorld).project(camera);
+    return {
+      x: box.left + (projection.x + 1) * box.width / 2,
+      y: box.top + (1 - projection.y) * box.height / 2,
+      radius: Math.abs(rim.x - projection.x) * box.width / 2
+    };
   }
 
   return {
     canvas: renderer.domElement,
     render,
-    visibleRose,
+    visibleRose: () => visibleSurfaceObject(asteroid.bloom, .074),
+    visibleSprout: () => visibleSurfaceObject(asteroid.sproutTip, .105),
+    petrovaSignal: expedition.petrovaSignal,
+    routePoints: expedition.routePoints,
+    routeTarget: expedition.routeTarget,
+    firstFlightTarget: () => firstFlightTarget,
+    welcomeEarth: () => welcomeEarth,
+    surfaceSignals: expedition.surfaceSignals,
+    async prepare(id) { expedition.prepare(id); },
     resize() {
       renderer.setSize(container.clientWidth, container.clientHeight, false);
       camera.aspect = container.clientWidth / container.clientHeight;

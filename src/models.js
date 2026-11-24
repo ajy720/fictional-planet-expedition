@@ -122,7 +122,32 @@ export function makeB612() {
   knob.position.y = .393;
   cover.add(knob);
 
-  return { group, terrain, garden, bloom, cover, normal, surface };
+  const sproutNormal = new THREE.Vector3(.48, -.19, .85).normalize();
+  ray.set(sproutNormal.clone().multiplyScalar(2), sproutNormal.clone().negate());
+  const sproutBed = new THREE.Group();
+  sproutBed.position.copy(ray.intersectObject(terrain)[0].point);
+  sproutBed.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sproutNormal);
+  group.add(sproutBed);
+  const soil = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), material(0x57483f));
+  soil.scale.set(.075, .02, .063);
+  sproutBed.add(soil);
+  const sprout = new THREE.Group();
+  sproutBed.add(sprout);
+  const shoot = new THREE.Mesh(new THREE.CylinderGeometry(.013, .021, .18, 7), material(0x648c4b));
+  shoot.position.y = .09;
+  sprout.add(shoot);
+  for (const side of [-1, 1]) {
+    const bud = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), material(side === 1 ? 0xa3be72 : 0x789e56));
+    bud.position.set(side * .048, .15, 0);
+    bud.scale.set(.058, .024, .036);
+    bud.rotation.z = side * .34;
+    sprout.add(bud);
+  }
+  const sproutTip = new THREE.Object3D();
+  sproutTip.position.y = .16;
+  sprout.add(sproutTip);
+
+  return { group, terrain, garden, bloom, cover, normal, surface, sproutBed, sprout, sproutTip };
 }
 
 export function atmosphere(radius) {
