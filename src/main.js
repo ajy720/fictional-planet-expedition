@@ -723,6 +723,7 @@ $('sound').addEventListener('click', () => {
   renderScreen();
 });
 $('sources').addEventListener('click', event => openDialog('source-dialog', event.currentTarget));
+$('distance-open').addEventListener('click', event => openDialog('distance-dialog', event.currentTarget));
 $('prev-section').addEventListener('click', () => goToSection(stageIndex() - 1));
 $('next-section').addEventListener('click', () => goToSection(stageIndex() + 1));
 $('launch').addEventListener('click', () => scrollToProgress(1));

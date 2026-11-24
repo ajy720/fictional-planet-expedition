@@ -139,6 +139,22 @@ export function createExpeditionUI(callbacks) {
     $('destination-sources').append(item);
   }
 
+  for (const world of Object.values(destinations)) {
+    if (!world.reference) continue;
+    const { name, lightYears } = world.reference;
+    const entry = element('li', '');
+    const heading = element('div', '', 'distance-heading');
+    heading.append(element('strong', world.name), element('span', name, 'small'),
+      element('b', `약 ${lightYears}광년`));
+    const track = element('span', '', 'distance-track');
+    track.style.setProperty('--distance', Math.log10(lightYears) / 3 * 100 + '%');
+    track.setAttribute('aria-hidden', 'true');
+    entry.append(heading, track, element('span', distanceAnalogy(world.reference, { compact: true }), 'small'));
+    $('distance-comparison').append(entry);
+  }
+  const unscaled = Object.values(destinations).filter(world => !world.reference).map(world => world.name);
+  copy('unscaled-worlds', `지구와의 직선거리 기준 미상 · ${unscaled.join(' · ')}`);
+
   function renderSurface(state) {
     const id = state.destination;
     const data = state.observation;

@@ -167,6 +167,7 @@
       <div id="map-markers" class="map-markers" role="group" aria-label="탐사 항로의 천체"></div>
       <div class="map-footer">
         <div class="map-tools">
+          <button type="button" id="distance-open" class="button">지구 기준 거리 비교 <span aria-hidden="true">↗</span></button>
           <p class="map-scale small">가상 항로 · 천체의 배치와 크기는 탐사용으로 조정했습니다.</p>
         </div>
         <div id="map-inspection" class="map-inspection spatial-callout" hidden>
@@ -245,6 +246,16 @@
         <li><a href="https://www.data.go.kr/data/15067652/fileData.do" target="_blank" rel="noopener noreferrer">전주역 위치 · 국가철도공단 ↗</a></li>
       </ul>
       <p class="small">일곱 목적지의 배경음과 환경음, 조작 효과음은 이 체험을 위해 합성했습니다.</p>
+    </div>
+  </dialog>
+  <dialog id="distance-dialog" class="dialog" aria-labelledby="distance-title">
+    <div class="dialog-content distance-content">
+      <div class="dialog-title"><h2 id="distance-title">지구에서 얼마나 멀까?</h2><button type="button" class="button icon" data-close aria-label="닫기" autofocus>×</button></div>
+      <p>작품 속 목적지와 연결된 실제 항성까지의 거리입니다. 눈금 한 칸마다 거리가 10배씩 늘어납니다.</p>
+      <p>서강대에 지구를 놓고 태양을 그 옆 1cm에 놓아 보세요. 같은 축척에서 별까지의 거리를 서강대에서 출발하는 직선거리로 비교할 수 있습니다.</p>
+      <div class="distance-ruler" aria-hidden="true"><span>1광년</span><span>10</span><span>100</span><span>1,000</span></div>
+      <ul id="distance-comparison" class="distance-comparison"></ul>
+      <p id="unscaled-worlds" class="small"></p>
     </div>
   </dialog>
   <dialog id="earth-dialog" class="earth-dialog" aria-labelledby="earth-title">

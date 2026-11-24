@@ -441,6 +441,24 @@ dialog { color: var(--ink); }
 .dialog p:not(.eyebrow) { color: var(--muted); }
 .source-list { margin: 20px 0; padding-left: 18px; }
 .source-list li { margin: 6px 0; }
+.distance-content { width: min(760px, 100%); }
+.distance-ruler { display: flex; justify-content: space-between; color: var(--muted); font: .78rem/1.5 var(--mono); }
+.distance-comparison { margin: 0 0 23px; padding: 0; list-style: none; }
+.distance-comparison li { margin: 12px 0 18px; }
+.distance-heading { display: grid; grid-template-columns: max-content 1fr max-content; align-items: baseline; gap: 10px; }
+.distance-heading b { color: var(--accent); font: 550 .875rem/1.5 var(--mono); }
+.distance-track {
+  position: relative; display: block; height: 1px; margin: 6px 0 4px;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(33.333% - 1px), #ffffff58 calc(33.333% - 1px) 33.333%), #ffffff21;
+}
+.distance-track::before {
+  content: ""; position: absolute; inset: -1px auto 0 0; width: var(--distance);
+  background: linear-gradient(90deg, #ffdbb950, var(--accent));
+}
+.distance-track::after {
+  content: ""; position: absolute; top: 50%; left: var(--distance);
+  width: 5px; height: 5px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--accent);
+}
 .earth-dialog::backdrop { background: transparent; }
 .earth-dialog[data-view="voyager"]::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -512,6 +530,9 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
   .directory-entry > p { grid-row: 2; }
   .directory-entry .button { grid-column: 2; grid-row: 1 / span 2; }
   .dialog-content { margin-left: 0; }
+  .distance-heading { grid-template-columns: 1fr auto; gap: 0 12px; }
+  .distance-heading span { grid-row: 2; }
+  .distance-heading b { grid-column: 2; grid-row: 1; }
 }
 
 @media (max-height: 475px) and (min-width: 680px) {
