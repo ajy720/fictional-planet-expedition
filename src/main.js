@@ -4,7 +4,7 @@ import { createAudio } from './audio.js';
 import { introSections, introSectionAt, lastIntroSection } from './intro.js';
 
 import { arrivalNodes, desertRoutes, destinations, distanceAnalogy, earthAngularDiameter, flightDuration, millerTimes, petrovaCheckpoint, routeFlight } from './destinations.js';
-import { echoInProgress } from './erid-sonar.js';
+import { echoCount, echoInProgress, echoTargets } from './erid-sonar.js';
 import { newExpedition, restoreExpedition, saveVersion } from './expedition-state.js';
 import { createExpeditionUI } from './expedition-ui.js';
 import { departureStage, departureStops } from './routes-scene.js';
@@ -361,7 +361,9 @@ function announce(value) {
 }
 
 function sound() {
-  audio.mix(state.sound && state.screen !== 'start' && !document.hidden && !failure, state.screen, Boolean(state.look || state.communicationOpen));
+  const world = state.screen === 'log' ? state.recordView : state.destination;
+  audio.mix(state.sound && state.screen !== 'start' && !document.hidden && !failure,
+    state.screen, Boolean(state.look || state.communicationOpen), world, state.observation);
 }
 
 function transition(screen, changes = {}) {
@@ -441,6 +443,7 @@ function pullSprout() {
   state.observation.sproutRemoved = true;
   renderScreen();
   save();
+  if (state.sound) audio.effect();
   announce('바오밥 싹을 뽑았습니다. 소행성을 돌며 장미를 찾아보세요.');
 }
 
@@ -909,6 +912,7 @@ function setOptics(mode) {
   renderScreen();
   save();
   if (mode === 'tracked') {
+    if (state.sound) audio.effect();
     announce('페트로바 선을 따라 아드리안에 접근합니다.');
     $(reduced.matches ? 'step-flight' : 'stage-title').focus({ preventScroll: true });
   } else announce($('instruction').textContent);
@@ -1118,11 +1122,14 @@ function observeDestination(action, value) {
       if (action === 'echo' && !echoInProgress(data)) {
         if (data.phase === 'ready') data.phase = 'echo';
         data.echoElapsed = 0;
+        if (state.sound) audio.sonar();
         announce('음파를 보냈습니다.');
       } else if (action === 'replay-erid' && data.phase === 'reply') {
+        if (state.sound) audio.eridTones(eridSignal);
         announce('수신 신호 · 낮은음, 높은음, 중간음');
       } else if (data.phase === 'reply' && /^tone-[012]$/.test(action)) {
         const tone = Number(action.at(-1));
+        if (state.sound) audio.eridTones([tone]);
         if (tone !== eridSignal[data.reply.length]) {
           data.reply = '';
           announce('신호가 다릅니다. 첫 음부터 다시 답하세요.');
@@ -1131,6 +1138,7 @@ function observeDestination(action, value) {
           if (data.reply.length === eridSignal.length) {
             data.phase = 'contact';
             data.complete = true;
+            if (state.sound) audio.eridTones(eridSignal, .26);
             announce('교신 성공. 같은 세 음이 다시 돌아왔습니다.');
             focus = 'surface-record';
           } else announce(`응답 ${data.reply.length} / ${eridSignal.length}`);
@@ -1278,6 +1286,7 @@ function tickExpedition(now, viewpointChanged) {
       ui.renderCommunication(state.communication);
       if (Math.floor(state.communication / 4000) > step) {
         announce(step ? '지구에서 답장 수신 · 발신 후 약 8.7년' : '판도라 방향에 신호 도착 · 약 4.4년');
+        if (state.sound) audio.effect();
       }
       throttledSave();
     }
@@ -1303,6 +1312,7 @@ function tickExpedition(now, viewpointChanged) {
   } else if (screen === 'surface') {
     const data = state.observation;
     const id = state.destination;
+    const received = id === 'erid' ? echoCount(data) : 0;
     const before = {
       elapsed: data.elapsed, light: data.light, complete: data.complete, phase: data.phase,
       view: data.viewProgress, orbitDay: data.orbitDays, orbitPlaying: data.orbitPlaying,
@@ -1320,6 +1330,10 @@ function tickExpedition(now, viewpointChanged) {
     else if (orbitChanged) ui.renderOrbitTime(data);
     if (changed || orbitChanged) throttledSave();
     if (changed || orbitChanged || animating || viewpointChanged) renderScene();
+    if (id === 'erid' && state.sound) {
+      const returned = echoCount(data);
+      for (let index = received; index < returned; index++) audio.sonar(echoTargets[index]);
+    }
     if (message) {
       if (id === 'arrakis') {
         if (before.desertSurvey !== data.desertSurvey && data.desertSurvey === desertSurveyDuration) {
@@ -1332,7 +1346,9 @@ function tickExpedition(now, viewpointChanged) {
         }
       }
       announce(message);
+      if (id === 'erid' && data.phase === 'reply' && before.phase === 'echo' && state.sound) audio.eridTones(eridSignal);
       if (id === 'adrian') {
+        if (state.sound) audio.effect();
         if (document.activeElement === $('stage-title')) $('open-sample').focus({ preventScroll: true });
       }
     }
