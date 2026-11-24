@@ -1252,6 +1252,7 @@ $('archive-next').addEventListener('click', () => transition('directory', { dire
 $('archive-earth').addEventListener('click', startEnding);
 $('ending-step').addEventListener('click', () => transition('ending', { endingProgress: 1 }));
 $('ending-records').addEventListener('click', () => transition('archive'));
+$('ending-photo').addEventListener('click', event => openDialog('ending-photo-dialog', event.currentTarget));
 function scrollDeparture(direction) {
   if (state.screen !== 'launchpad' || activeDialog || failure) return;
   const stage = departureStage(state.launchProgress);

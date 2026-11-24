@@ -208,7 +208,10 @@
         <div id="ending-question" hidden>
           <p class="eyebrow" data-copy="earthView.heading"></p>
           <h2 id="ending-title" tabindex="-1" data-copy="ending.question"></h2>
-          <button type="button" id="ending-records" class="button primary" data-copy="ending.openRecords"></button>
+          <div class="buttons ending-actions">
+            <button type="button" id="ending-records" class="button primary" data-copy="ending.openRecords"></button>
+            <button type="button" id="ending-photo" class="button" aria-haspopup="dialog" data-copy="ending.openPhoto"></button>
+          </div>
         </div>
       </div>
     </section>
@@ -223,6 +226,18 @@
     </section>
   </main>
 
+  <dialog id="ending-photo-dialog" class="dialog ending-photo-dialog" aria-labelledby="ending-photo-title">
+    <div class="dialog-content ending-photo-content">
+      <div class="dialog-title">
+        <h2 id="ending-photo-title" data-copy="ending.photoTitle"></h2>
+        <button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button>
+      </div>
+      <figure>
+        <img src="./references/pale-blue-dot.jpg" width="1536" height="1519" loading="lazy" alt="" data-copy-alt="ending.photoAlt">
+        <figcaption><a href="https://science.nasa.gov/photojournal/pale-blue-dot-revisited/" target="_blank" rel="noopener noreferrer">NASA/JPL-Caltech</a></figcaption>
+      </figure>
+    </div>
+  </dialog>
   <dialog id="source-dialog" class="dialog" aria-labelledby="source-title">
     <div class="dialog-content">
       <div class="dialog-title"><h2 id="source-title" data-copy="source.title"></h2><button type="button" class="button icon" data-close data-copy-aria-label="common.close" autofocus>×</button></div>

@@ -54,7 +54,7 @@ export function localizeDom(root) {
     element.replaceChildren(...lines.flatMap((line, index) =>
       index ? [element.ownerDocument.createElement('br'), line] : [line]));
   }
-  for (const attribute of ['aria-label', 'content']) {
+  for (const attribute of ['alt', 'aria-label', 'content']) {
     for (const element of root.querySelectorAll(`[data-copy-${attribute}]`)) {
       element.setAttribute(attribute, t(element.getAttribute(`data-copy-${attribute}`)));
     }
