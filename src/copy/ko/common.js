@@ -4,7 +4,7 @@ export default {
   "common.cancel": "취소",
   "common.canvasLabel": "3D 관측창",
   "common.close": "닫기",
-  "common.description": "지구에서 출발해 영화와 소설 속 일곱 천체를 관찰하는 3D 탐사",
+  "common.description": "지구에서 출발해 영화와 소설 속 일곱 천체를 탐사하는 3D 웹 체험.",
   "common.earth": "지구",
   "common.externalLink": "{label} ↗",
   "common.home": "시작 화면",
