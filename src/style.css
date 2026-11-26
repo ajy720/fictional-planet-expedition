@@ -788,6 +788,16 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
 
 @media (max-height: 475px) and (min-aspect-ratio: 4/3) {
   .topbar { padding-top: var(--safe-top); }
+  .welcome {
+    grid-template-rows: minmax(min-content, 1fr) auto;
+    gap: 8px;
+    padding: calc(var(--safe-top) + 50px) var(--edge-right) calc(var(--safe-bottom) + 8px) var(--edge-left);
+    overflow: auto; overscroll-behavior: contain; pointer-events: auto;
+  }
+  .welcome-content { padding-bottom: 0; }
+  .welcome h1 { margin-bottom: 10px; font-size: clamp(2.35rem, 6.5vw, 3.7rem); }
+  .welcome-copy { margin-bottom: 8px; }
+  .welcome-footer { position: static; margin: 0; }
   .route-nodes { position: absolute; left: 50%; transform: translateX(-50%); margin-top: 10px; }
   .route-nodes li { width: 48px; }
   .telemetry, body[data-screen="surface"] .telemetry:has(.in-scene) {
