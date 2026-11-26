@@ -11,6 +11,10 @@ npm run dev
 
 터미널에 표시되는 로컬 URL을 WebGL 2를 지원하는 브라우저에서 연다. 배포용 정적 파일은 `npm run build`로 생성하고 `npm run preview`로 확인할 수 있다.
 
+## 배포
+
+`main`에 푸시하면 [GitHub Actions 워크플로](.github/workflows/deploy.yml)가 빌드하여 [GitHub Pages](https://ajy720.github.io/fictional-planet-expedition/)에 자동 배포한다.
+
 ## 체험
 
 1. 시작 화면에서 소리를 선택한다.
