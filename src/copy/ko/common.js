@@ -15,6 +15,7 @@ export default {
   "common.magnification": "{zoom}×",
   "common.milliliters": "{amount}mL",
   "common.moon": "달",
+  "common.observationInfo": "거리와 축척",
   "common.pause": "일시정지",
   "common.returnToRoute": "항로로 돌아가기",
   "common.seconds": "{seconds}초",

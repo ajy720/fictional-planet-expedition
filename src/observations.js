@@ -115,14 +115,14 @@ export function tatooineShadowStatus({ visibleCount, separation }) {
   return [t('tatooine.noShadow'), t('tatooine.oneShadow'), t('tatooine.twoShadows')][visibleCount];
 }
 
-export function observationStatus(id, data) {
+export function observationStatus(id, data, touch = false) {
   switch (id) {
     case 'pandora':
       if (data.view === 'orbit') return data.scaleComparison
         ? t('pandora.realScaleStatus')
         : t('pandora.fictionalScaleStatus');
       if (data.light !== data.target) return data.target ? t('pandora.turningNight') : t('pandora.turningDay');
-      return data.light ? t('pandora.lookUp') : t('pandora.switchToNight');
+      return data.light ? t(touch ? 'pandora.lookUpTouch' : 'pandora.lookUp') : t('pandora.switchToNight');
     case 'adrian':
       if (data.phase === 'sampling') return data.elapsed < 3000 ? t('adrian.reachingAltitude') : t('adrian.collecting');
       if (data.phase === 'sample') return t('adrian.sampleCollected');

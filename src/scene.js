@@ -20,8 +20,12 @@ export function adjustOrbit(orbit, x, y, zoom = 1) {
 }
 
 export async function createScene(container) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  const mobileGraphics = matchMedia('(pointer: coarse)').matches;
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    powerPreference: mobileGraphics ? 'low-power' : 'high-performance'
+  });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, mobileGraphics ? 1.25 : 1.5));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.18;
   renderer.domElement.tabIndex = -1;
@@ -56,13 +60,14 @@ export async function createScene(container) {
   scene.add(background);
 
   const loader = new THREE.TextureLoader();
+  const textures = mobileGraphics
+    ? ['earth-mobile.webp', 'moon-mobile.webp', 'clouds-mobile.webp']
+    : ['earth.jpg', 'moon.jpg', 'clouds.png'];
   let earthMap, moonMap, cloudMap;
   try {
-    [earthMap, moonMap, cloudMap] = await Promise.all([
-      loader.loadAsync(import.meta.env.BASE_URL + 'textures/earth.jpg'),
-      loader.loadAsync(import.meta.env.BASE_URL + 'textures/moon.jpg'),
-      loader.loadAsync(import.meta.env.BASE_URL + 'textures/clouds.png')
-    ]);
+    [earthMap, moonMap, cloudMap] = await Promise.all(textures.map(
+      file => loader.loadAsync(import.meta.env.BASE_URL + 'textures/' + file)
+    ));
   } catch (error) {
     renderer.dispose();
     renderer.domElement.remove();

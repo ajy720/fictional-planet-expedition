@@ -10,12 +10,15 @@ import { newExpedition, restoreExpedition, saveVersion } from './expedition-stat
 import { createExpeditionUI } from './expedition-ui.js';
 import { departureStage, departureStops } from './routes-scene.js';
 import { adrianObservationMagnification, advanceObservation, desertStep, desertSurveyDuration, eridSignal, markTatooineSunset, newObservation, recordDetails, tatooineShadowStatus, waterReport } from './observations.js';
-import { positionCallout } from './spatial-ui.js';
+import { positionCallout, touchInput } from './spatial-ui.js';
 import { binaryOrbit, groundSkyAt, orbitRates, outerOrbit } from './tatooine-orbit.js';
 
 const $ = id => document.getElementById(id);
 const show = (id, on) => { $(id).hidden = !on; };
-const copy = (id, value) => { $(id).textContent = value; };
+const copy = (id, value) => {
+  const element = $(id);
+  if (element.textContent !== value) element.textContent = value;
+};
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const audio = createAudio();
 const key = 'fictional-planet-expedition:v1';
@@ -138,7 +141,7 @@ function renderScene() {
   if (scene && state.screen === 'directory') ui.positionMapMarkers(scene.routePoints(), state.mapSelection);
   scene?.canvas.classList.toggle('sky-look', canLookAroundPandora());
   const signals = state.screen === 'surface' && !state.look ? scene?.surfaceSignals() : null;
-  if (state.screen === 'surface') ui.positionSurface(signals);
+  if (state.screen === 'surface') ui.positionSurface(signals, state.observation.lookPitch);
   const fade = reduced.matches ? 0 : signals?.transitionFade ?? 0;
   if (viewFade.style.opacity !== String(fade)) viewFade.style.opacity = String(fade);
   const routed = state.screen === 'route-flight';
@@ -192,7 +195,10 @@ function renderScreen() {
   const inspecting = screen === 'rose';
   const orbiting = screen === 'orbit';
   const scaling = screen === 'intro';
+  const mapSizeChanged = (document.body.dataset.screen === 'directory') !== map;
   document.body.dataset.screen = screen;
+  if (surface) document.body.dataset.destination = state.destination;
+  else delete document.body.dataset.destination;
   document.body.toggleAttribute('data-looking', Boolean(state.look));
   show('welcome', welcome);
   show('journey', journey);
@@ -222,7 +228,7 @@ function renderScreen() {
     scene.canvas.classList.toggle('target', false);
     const onPandora = surface && state.destination === 'pandora';
     scene.canvas.tabIndex = orbiting || onPandora ? 0 : -1;
-    scene.canvas.setAttribute('aria-label', onPandora ? t('pandora.canvasLabel')
+    scene.canvas.setAttribute('aria-label', onPandora ? t(touchInput.matches ? 'pandora.canvasTouchLabel' : 'pandora.canvasLabel')
       : orbiting ? t('b612.canvasLabel') : t('common.canvasLabel'));
   }
 
@@ -231,6 +237,7 @@ function renderScreen() {
   show('metric-distance-analogy', Boolean(reference));
   show('departure-actions', departure);
   show('surface-actions', surface);
+  show('observation-info', surface);
   show('observation-readout', surface);
   if (!surface) {
     show('surface-record', false);
@@ -319,6 +326,7 @@ function renderScreen() {
       : roseMove ? (orbiting ? t('b612.approachingRose') : t('b612.returningToOrbit')) : message);
     copy('pause-flight', state.paused ? t('flight.resume') : t('common.pause'));
   }
+  if (mapSizeChanged) scene?.resize();
   renderScene();
   if (!journey || failure) window.scrollTo(0, 0);
 }
@@ -500,7 +508,11 @@ function bindCanvas(canvas) {
     else if (click && atPoint(rosePoint, event.clientX, event.clientY)) observe();
     else save();
   });
-  canvas.addEventListener('lostpointercapture', () => { pointer = undefined; });
+  for (const type of ['pointercancel', 'lostpointercapture']) {
+    canvas.addEventListener(type, event => {
+      if (pointer?.id === event.pointerId) pointer = undefined;
+    });
+  }
   canvas.addEventListener('wheel', event => {
     if (state.screen !== 'orbit' || activeDialog) return;
     event.preventDefault();
@@ -724,6 +736,27 @@ $('sound').addEventListener('click', () => {
   renderScreen();
 });
 $('sources').addEventListener('click', event => openDialog('source-dialog', event.currentTarget));
+$('observation-info').addEventListener('click', event => {
+  const fields = {
+    'observation-distance-label': 'metric-label',
+    'observation-distance': 'metric',
+    'observation-distance-note': 'metric-note',
+    'observation-distance-analogy': 'metric-distance-analogy'
+  };
+  const pandoraOrbit = state.destination === 'pandora' && state.observation.view === 'orbit';
+  for (const [id, source] of Object.entries(fields)) {
+    const text = $(source).textContent;
+    copy(id, text);
+    show(id, Boolean(text) && !$(source).hidden);
+  }
+  copy('observation-scale-name', $('instruction').textContent);
+  const scale = $('local-readout')?.textContent ?? '';
+  copy('observation-scale', scale);
+  show('observation-scale-name', pandoraOrbit);
+  show('observation-scale', pandoraOrbit && Boolean(scale));
+  openDialog('observation-dialog', event.currentTarget);
+});
+
 $('distance-open').addEventListener('click', event => openDialog('distance-dialog', event.currentTarget));
 $('prev-section').addEventListener('click', () => goToSection(stageIndex() - 1));
 $('next-section').addEventListener('click', () => goToSection(stageIndex() + 1));
@@ -882,20 +915,29 @@ window.addEventListener('resize', () => {
   }
   renderScreen();
 });
+touchInput.addEventListener('change', renderScreen);
 reduced.addEventListener('change', () => {
   lastTime = 0;
   centerHud();
   renderScreen();
 });
 window.addEventListener('pagehide', save);
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  lastTime = 0;
+  scene?.resize();
+  renderScreen();
+  sound();
+});
 window.addEventListener('blur', () => { lastTime = 0; centerHud(); save(); });
 window.addEventListener('focus', () => { lastTime = 0; });
 document.addEventListener('visibilitychange', () => {
   lastTime = 0;
   if (document.hidden) {
+    pointer = undefined;
     centerHud();
     save();
-  }
+  } else renderScene();
   sound();
 });
 
@@ -1088,6 +1130,12 @@ function observeDestination(action, value) {
       if ((action === 'day' || action === 'night') && data.view === 'ground') {
         data.target = Number(action === 'night');
         if (action === 'night') scene?.canvas.focus({ preventScroll: true });
+      } else if (action === 'look-up' && canLookAroundPandora()
+        && data.target === 1 && data.light >= .82) {
+        movePandoraView(1);
+        save();
+        if (!$('find-polyphemus').closest('[data-anchor]').hidden) $('find-polyphemus').focus({ preventScroll: true });
+        return;
       } else if (action === 'polyphemus' && canLookAroundPandora()
         && data.target === 1 && !$('find-polyphemus').closest('[data-anchor]').hidden) {
         data.view = 'orbit';

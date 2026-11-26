@@ -3,7 +3,7 @@ import { MathUtils, Vector3 } from 'three';
 import { communicationProgressMax, communicationStage, desertRoutes, destinationIds, destinations, distanceAnalogy, millerTimes, pandoraScale, routeFlight } from './destinations.js';
 import { echoInProgress } from './erid-sonar.js';
 import { desertStep, eridTone, eridSignal, firstMillerWave, millerCrestAt, observationStatus, recordEntryText, suitTestVolume, tatooineShadowStatus, waterReport } from './observations.js';
-import { positionCallout } from './spatial-ui.js';
+import { compactLayout, positionCallout, touchInput } from './spatial-ui.js';
 import { auKm, binaryOrbit, groundSkyAt, orbitPosition, orbitRates, outerOrbit } from './tatooine-orbit.js';
 
 const $ = id => document.getElementById(id);
@@ -41,7 +41,8 @@ const tatooineOrbitControls = `<div class="binary-controls" id="tatooine-orbit-p
 const km = value => t('distance.kilometers', { km: formatNumber(Math.round(value)) });
 const starSeparation = new Vector3();
 const controls = {
-  pandora: unit('forest-light', action('forest-day', 'pandora.day', 'day') + action('forest-night', 'pandora.night', 'night'))
+  pandora: unit('forest-light', action('forest-day', 'pandora.day', 'day') + action('forest-night', 'pandora.night', 'night')
+    + action('pandora-look-up', 'pandora.lookUpButton', 'look-up'))
     + unit('polyphemus', action('find-polyphemus', 'pandora.findPolyphemus', 'polyphemus', true))
     + unit('orbit-return', '<label id="pandora-zoom-label" class="range-label"><span id="pandora-zoom-label-text"></span> <input type="range" id="pandora-zoom" min="1" max="8" step=".5" value="1"><output id="pandora-zoom-value" for="pandora-zoom"></output></label>'
       + action('compare-pandora-scale', 'pandora.compareScale', 'compare-scale')
@@ -188,12 +189,13 @@ export function createExpeditionUI(callbacks) {
     }
     show('observation-readout', true);
     show('surface-record', data.complete);
-    copy('instruction', observationStatus(id, data));
+    copy('instruction', observationStatus(id, data, touchInput.matches));
     switch (id) {
       case 'pandora': {
         const inForest = data.view === 'ground' && data.viewProgress === 0;
         show('forest-day', inForest);
         show('forest-night', inForest);
+        show('pandora-look-up', inForest && data.target === 1 && data.light >= .82);
         const inOrbit = data.view === 'orbit';
         const orbitReady = inOrbit && data.viewProgress === 2;
         const comparing = Boolean(data.scaleComparison);
@@ -339,7 +341,7 @@ export function createExpeditionUI(callbacks) {
   });
   $('surface-record').addEventListener('click', () => callbacks.action('record'));
 
-  function positionSurface(signals) {
+  function positionSurface(signals, pitch = 0) {
     $('stage-title').classList.toggle('in-scene', Boolean(signals?.title));
     const reading = signals?.anchors.find(([key]) => key === 'desert-water-reading')?.[1];
     waterReading.hidden = !reading;
@@ -347,13 +349,16 @@ export function createExpeditionUI(callbacks) {
       waterReading.style.left = Math.min(reading.x, innerWidth - waterReading.offsetWidth - 12) + 'px';
       waterReading.style.top = reading.y + 'px';
     }
+    const compact = compactLayout.matches;
     for (const unit of surface.querySelectorAll('[data-anchor]')) {
       const point = signals?.anchors.find(([key]) => key === unit.dataset.anchor)?.[1];
       if (unit.dataset.anchor === 'polyphemus') {
-        const visible = Boolean(point && point.y > Math.max(104, innerHeight * .17) && point.y < innerHeight * .73);
+        const visible = Boolean(point && (compact
+          ? pitch >= .48
+          : point.y > Math.max(104, innerHeight * .17) && point.y < innerHeight * .73));
         if (!visible && unit.contains(document.activeElement)) $('scene').querySelector('canvas')?.focus({ preventScroll: true });
         unit.hidden = !visible;
-        if (visible) {
+        if (visible && !compact) {
           unit.style.setProperty('--planet-x', point.x + 'px');
           unit.style.top = point.y + 'px';
         }
@@ -545,6 +550,11 @@ export function createExpeditionUI(callbacks) {
         width: label.width + 'px', height: label.height + 'px'
       });
     }
+    const inspection = $('map-inspection');
+    if (compactLayout.matches) {
+      inspection.classList.remove('projected');
+      return;
+    }
     if (!selection) return;
     const target = points.find(point => point.id === selection && point.visible);
     const viewportWidth = window.innerWidth;
@@ -561,7 +571,7 @@ export function createExpeditionUI(callbacks) {
         avoid.push({ left: centerX - extent, top: centerY - extent, width: 2 * extent, height: 2 * extent });
       }
     }
-    positionCallout($('map-inspection'), target && {
+    positionCallout(inspection, target && {
       x: target.x * viewportWidth / 100, y: target.y * viewportHeight / 100
     }, { vertical: true, radius: target?.radius, avoid });
   }

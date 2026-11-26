@@ -1,3 +1,6 @@
+export const compactLayout = matchMedia('(max-width: 679px), (max-height: 475px)');
+export const touchInput = matchMedia('(any-pointer: coarse)');
+
 export function positionCallout(element, point, { vertical = false, radius = 0, avoid = [] } = {}) {
   const width = window.innerWidth;
   const height = window.innerHeight;

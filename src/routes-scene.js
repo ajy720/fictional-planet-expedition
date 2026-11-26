@@ -247,14 +247,15 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
   }
 
   function positionTitles(view, map, departure, progress) {
-    const narrow = camera.aspect < 1.15;
-    const portraitMap = map && narrow;
+    const { clientWidth, clientHeight } = renderer.domElement;
+    const compactMap = map && clientWidth < 580;
+    const narrow = compactMap || camera.aspect < 1.15;
+    const portraitMap = map && camera.aspect < 1.15;
     const up = portraitMap ? portraitUp : viewUp;
     const reveal = smoothstep(progress, .26, .39);
     const fade = 1 - smoothstep(progress, .77, .99);
     const targetFade = 1 - smoothstep(progress, .76, .89);
     const baseHeight = 1.55 * clamp(1.12 / camera.aspect, 1, 2.65);
-    const { clientWidth, clientHeight } = renderer.domElement;
     const focalLength = clientHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
     for (const id of ids) {
       const title = titles[id];
@@ -271,7 +272,9 @@ export function createRouteScene(renderer, asteroidTemplate, earthTemplate) {
       const planet = planets[id];
       const planetRadius = planet.scale.y;
       const unitsPerPixel = -cameraSpace.copy(planet.position).applyMatrix4(camera.matrixWorldInverse).z / focalLength;
-      const height = clamp(baseHeight, (narrow ? 20 : 27) * unitsPerPixel, (narrow ? 44 : 80) * unitsPerPixel);
+      const minPixels = compactMap ? 16 : narrow ? 20 : 27;
+      const maxPixels = compactMap ? 31 : narrow ? 44 : 80;
+      const height = clamp(baseHeight, minPixels * unitsPerPixel, maxPixels * unitsPerPixel);
       const halfWidth = title.geometry.parameters.width * height / 2;
       const reach = (planetRadius * .73 + 2 * halfWidth + .25) / unitsPerPixel + 8;
       const roomLeft = x * clientWidth / 100;
