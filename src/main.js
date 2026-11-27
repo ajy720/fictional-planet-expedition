@@ -1,4 +1,5 @@
-import { getLocale, localizeDom, onLocaleChange, t } from './copy/index.js';
+import { getLocale, localizeDom, onLocaleChange, registerLocale, setLocale, t } from './copy/index.js';
+import english from './copy/en/index.js';
 import './style.css';
 import { adjustOrbit, createScene, initialOrbit } from './scene.js';
 import { createAudio } from './audio.js';
@@ -22,6 +23,7 @@ const copy = (id, value) => {
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const audio = createAudio();
 const key = 'fictional-planet-expedition:v1';
+const languageKey = 'fictional-planet-expedition:language';
 const first = { screen: 'intro', progress: 0, elapsed: 0, paused: false, covered: false, look: null };
 
 let saved;
@@ -75,6 +77,14 @@ function readSaved() {
   } catch (error) {
     if (error instanceof SyntaxError) corrupt = true;
     else show('save-warning', true);
+  }
+}
+
+function readLanguage() {
+  try {
+    return localStorage.getItem(languageKey);
+  } catch {
+    return null;
   }
 }
 
@@ -736,6 +746,15 @@ $('sound').addEventListener('click', () => {
   renderScreen();
 });
 $('sources').addEventListener('click', event => openDialog('source-dialog', event.currentTarget));
+$('language-toggle').addEventListener('click', () => {
+  const nextLocale = getLocale() === 'ko' ? 'en' : 'ko';
+  setLocale(nextLocale);
+  try {
+    localStorage.setItem(languageKey, nextLocale);
+  } catch {
+    // The current page can still use the chosen language.
+  }
+});
 $('observation-info').addEventListener('click', event => {
   const fields = {
     'observation-distance-label': 'metric-label',
@@ -1563,7 +1582,8 @@ function localizeScreen() {
 
 history.scrollRestoration = 'manual';
 readSaved();
+registerLocale('en', english);
 onLocaleChange(localizeScreen);
-localizeScreen();
+if (!setLocale(readLanguage())) localizeScreen();
 restoreScene();
 requestAnimationFrame(tick);

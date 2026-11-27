@@ -72,6 +72,7 @@ export default {
   "source.metro": "서울 지하철역 위치 · 서울교통공사 ↗",
   "source.moonFacts": "지구–달 거리와 달 제원 · NASA ↗",
   "source.moonTexture": "달 표면 · NASA SVS, Ernie Wright ↗",
+  "source.open": "탐사 소개와 출처",
   "source.paleBlueDot": "창백한 푸른 점 · NASA/JPL-Caltech ↗",
   "source.railway": "전주역 위치 · 국가철도공단 ↗",
   "source.rose": "B612의 장미와 유리 덮개 · 어린 왕자 공식 사이트 ↗",

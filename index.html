@@ -34,7 +34,10 @@
     <ol id="route-nodes" class="route-nodes" data-copy-aria-label="flight.nodes" hidden></ol>
     <div class="utilities">
       <button type="button" id="sound" class="utility" hidden><span class="sound-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="sound-label"></span></button>
-      <button type="button" id="sources" class="utility"><span data-copy="source.title"></span> <span aria-hidden="true">↗</span></button>
+      <button type="button" id="sources" class="utility" aria-haspopup="dialog"><span data-copy="source.open"></span> <span aria-hidden="true">↗</span></button>
+      <button type="button" id="language-toggle" class="utility language-toggle" data-copy-aria-label="common.switchLanguage">
+        <span lang="ko">KO</span><span aria-hidden="true">/</span><span lang="en">EN</span>
+      </button>
     </div>
   </header>
   <main>

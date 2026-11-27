@@ -96,6 +96,12 @@ button:disabled { opacity: .55; cursor: default; }
 .orbit-mark::after { content: ""; position: absolute; top: -1px; left: 11px; width: 3px; height: 3px; border-radius: 50%; background: var(--ink); }
 .utilities { display: flex; justify-content: flex-end; align-items: center; gap: 19px; grid-column: 3; }
 .utility { color: var(--muted); font-size: .8125rem; pointer-events: auto; }
+.language-toggle { gap: .3em; white-space: nowrap; font: 550 .75rem/1 var(--mono); }
+.language-toggle > [aria-hidden] { opacity: .65; }
+.language-toggle:hover:not(:disabled) { text-decoration: none; }
+html:lang(ko) .language-toggle [lang="ko"], html:lang(en) .language-toggle [lang="en"] {
+  color: var(--accent); text-decoration: underline; text-underline-offset: .35em;
+}
 .sound-mark { width: 16px; height: 13px; display: inline-flex; align-items: center; gap: 2px; color: var(--accent); }
 .sound-mark i { width: 2px; height: 45%; background: currentColor; }
 .sound-mark i:nth-child(2) { height: 90%; }
@@ -129,6 +135,7 @@ button:disabled { opacity: .55; cursor: default; }
   font-size: clamp(3.5rem, 7.2vw, 7.5rem); font-weight: 520;
   letter-spacing: -.085em; line-height: 1.03; margin: 0 0 25px;
 }
+.welcome h1:lang(en) { font-size: clamp(2rem, min(12vw, 13dvh), 4.75rem); letter-spacing: -.065em; }
 .welcome-copy { color: var(--muted); font-size: clamp(.95rem, 1.3vw, 1.125rem); margin: 0 0 19px; line-height: 1.7; word-break: keep-all; text-shadow: var(--shadow); }
 .start-actions { display: flex; gap: clamp(12px, 2.7vw, 34px); flex-wrap: wrap; }
 .start-actions .button { min-height: 48px; text-decoration: underline; text-underline-offset: .37em; }
@@ -569,7 +576,9 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
 
 @media (max-width: 679px) {
   :root { --edge: 18px; }
-  .topbar { grid-template-columns: 1fr auto; padding-top: calc(7px + var(--safe-top)); }
+  .topbar { grid-template-columns: minmax(0, 1fr) auto; padding-top: calc(7px + var(--safe-top)); }
+  .wordmark { max-width: 100%; }
+  .wordmark > span[data-copy] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .utilities { grid-column: 2; grid-row: 1; gap: 10px; }
   #sources { font-size: .75rem; }
   #sound { min-width: 44px; }
@@ -602,6 +611,10 @@ body[data-error] :is(.welcome, .journey, .log-screen, .route-map, .directory-scr
   .distance-heading { grid-template-columns: 1fr auto; gap: 0 12px; }
   .distance-heading span { grid-row: 2; }
   .distance-heading b { grid-column: 2; grid-row: 1; }
+}
+
+@media (max-width: 360px) {
+  .topbar:has(#sound:not([hidden])) .wordmark > span[data-copy] { display: none; }
 }
 
 .scene-labels .orbit-caption b { font-weight: inherit; }

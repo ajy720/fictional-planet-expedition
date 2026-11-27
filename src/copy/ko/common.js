@@ -23,6 +23,7 @@ export default {
   "common.soundOff": "소리 끄기",
   "common.soundOn": "소리 켜기",
   "common.sun": "태양",
+  "common.switchLanguage": "영어로 전환",
   "common.viewRecord": "탐사 기록 보기",
   "common.workTitle": "《{work}》",
 };
